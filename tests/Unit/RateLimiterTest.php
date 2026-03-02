@@ -24,11 +24,19 @@ class RateLimiterTest extends TestCase
     protected function tearDown(): void
     {
         // Cleanup temp files
-        if (is_dir($this->storageDir)) {
-            print_r(glob($this->storageDir . '/*.json') ?: []);
-            array_map('unlink', glob($this->storageDir . '/*.json') ?: []);
-            rmdir($this->storageDir);
+        if (!is_dir($this->storageDir)) {
+            return;
         }
+
+        $files = glob($this->storageDir . '/*') ?: [];
+
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+
+        @rmdir($this->storageDir);
     }
 
     public function testAllowsHitsWithinLimit(): void
