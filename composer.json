@@ -17,7 +17,11 @@
     "authors": [
         {
             "name": "Laika IT",
-            "email": "strblackhawk.woop@gmail.com"
+            "email": "strblackhawk@gmail.com"
+        },
+        {
+            "name": "SHowket Ahmed",
+            "email": "riyadhtayf@gmail.com"
         }
     ],
     "require": {

@@ -25,7 +25,7 @@ class RateLimiterTest extends TestCase
     {
         // Cleanup temp files
         if (is_dir($this->storageDir)) {
-            array_map('unlink', glob($this->storageDir . '/*.json') ?: []);
+            array_map('print', glob($this->storageDir . '/*.json') ?: []);
             rmdir($this->storageDir);
         }
     }
