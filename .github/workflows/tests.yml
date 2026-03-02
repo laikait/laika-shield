@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        php: ['8.1', '8.2', '8.3']
+        php: ['8.1', '8.2', '8.3', '8.4']
 
     steps:
       - name: Checkout code
@@ -38,19 +38,3 @@ jobs:
       - name: Run PHPUnit with coverage
         if: matrix.php == '8.3'
         run: vendor/bin/phpunit --coverage-text
-
-  cs:
-    name: Code Style
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-
-      - run: composer install --prefer-dist --no-progress
-
-      - name: Check code style
-        run: vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes

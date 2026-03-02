@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Http;
 
-use Laika\Shield\Shield;
 use Laika\Shield\Exceptions\FirewallException;
 use Laika\Shield\Exceptions\RateLimitExceededException;
+use Laika\Shield\Shield;
 
 /**
  * Class ShieldMiddleware
- *
  * Drop-in Laika MMC middleware that runs the Shield firewall on every request.
  *
  * Register in your Laika application's middleware stack:
@@ -30,18 +29,21 @@ use Laika\Shield\Exceptions\RateLimitExceededException;
 class ShieldMiddleware
 {
     /**
-     * @param array<string, mixed> $config  The Shield configuration array (see Config/shield.php).
+     * @param array<string,mixed> $config The Shield configuration array (see Config/shield.php).
      */
-    public function __construct(
-        private readonly array $config = [],
-    ) {}
+    private readonly array $config;
+
+    public function __construct(array $config = [])
+    {
+        $this->config = $config;
+    }
 
     /**
      * Handle the incoming request.
      * Call this from your Laika middleware pipeline.
-     *
-     * @throws FirewallException         If blocked by a generic rule.
+     * @throws FirewallException If blocked by a generic rule.
      * @throws RateLimitExceededException If rate limit is exceeded.
+     * @return mixed
      */
     public function handle(?callable $next = null): mixed
     {
