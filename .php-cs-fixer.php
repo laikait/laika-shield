@@ -14,5 +14,5 @@ return (new PhpCsFixer\Config())
         'trailing_comma_in_multiline'  => true,
         'phpdoc_align'                 => ['align' => 'left'],
         'single_quote'                 => true,
-    ])
+    ])->setRiskyAllowed(true)
     ->setFinder($finder);
