@@ -33,11 +33,11 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run tests
-        run: vendor/bin/phpunit --colors=always
+        run: vendor/bin/phpunit --colors=always --display-warnings --display-deprecations --display-notices
 
       - name: Run PHPUnit with coverage
         if: matrix.php == '8.3'
-        run: vendor/bin/phpunit --display-warnings --display-deprecations --display-notices
+        run: vendor/bin/phpunit --coverage-text
 
   cs:
     name: Code Style
