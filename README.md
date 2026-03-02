@@ -140,9 +140,9 @@ return [
 src/
 ├── Shield.php                          # Main firewall engine (static + fluent API)
 ├── Interfaces/
-│   ├── FirewallInterface.php           # Core firewall contract
-│   ├── RuleInterface.php              # Individual rule contract
-│   └── DetectorInterface.php          # Pattern detector contract
+│   ├── FirewallInterface.php           # Core Firewall Interface
+│   ├── RuleInterface.php              # Individual Rule Interface
+│   └── DetectorInterface.php          # Pattern Detector Interface
 ├── Rules/
 │   ├── IpRule.php                     # IP blocking / allowlisting
 │   ├── IpVersionRule.php              # IPv4 / IPv6 enforcement
