@@ -64,7 +64,7 @@ class Shield implements FirewallInterface
     {
         $shield = new self();
 
-        $trustProxy = (bool) ($config['trust_proxy'] ?? false);
+        $trustProxy = (bool) ($config['trust.proxy'] ?? false);
         $shield->trustProxy($trustProxy);
 
         // IP blocking / allowlisting
@@ -74,26 +74,27 @@ class Shield implements FirewallInterface
         }
 
         // IP version filtering
-        if (!empty($config['ip_version'])) {
-            $shield->requireIpVersion((int) $config['ip_version']);
+        if (!empty($config['ip.version'])) {
+            $shield->requireIpVersion((int) $config['ip.version']);
         }
 
         // Rate limiting
-        if (!empty($config['rate_limit'])) {
-            $rl = $config['rate_limit'];
+        if (!empty($config['rate.limit'])) {
+            $rl = $config['rate.limit'];
             $shield->rateLimit(
-                (int) ($rl['max_hits'] ?? 60),
+                (int) ($rl['max.hits'] ?? 60),
                 (int) ($rl['window'] ?? 60),
-                $rl['storage_dir'] ?? null,
+                $rl['storage.dir'] ?? null,
             );
         }
 
         // SQL injection detection
-        if (!empty($config['sql_injection'])) {
-            $sqli = is_array($config['sql_injection']) ? $config['sql_injection'] : [];
+        if (!empty($config['sql.injection'])) {
+            $sqli = is_array($config['sql.injection']) ? $config['sql.injection'] : [];
             $shield->detectSqlInjection(
-                $sqli['skip_keys'] ?? [],
-                (bool) ($sqli['scan_body'] ?? true),
+                $sqli['skip.keys'] ?? [],
+                (bool) ($sqli['scan.body'] ?? true),
+                (bool) ($sqli['strict'] ?? true),
             );
         }
 
@@ -101,23 +102,23 @@ class Shield implements FirewallInterface
         if (!empty($config['xss'])) {
             $xss = is_array($config['xss']) ? $config['xss'] : [];
             $shield->detectXss(
-                $xss['skip_keys'] ?? [],
-                (bool) ($xss['scan_headers'] ?? false),
-                (bool) ($xss['scan_body'] ?? true),
+                $xss['skip.keys'] ?? [],
+                (bool) ($xss['scan.headers'] ?? false),
+                (bool) ($xss['scan.body'] ?? true),
             );
         }
 
         // Request filtering
-        if (!empty($config['request_filter'])) {
-            $rf = $config['request_filter'];
+        if (!empty($config['request.filter'])) {
+            $rf = $config['request.filter'];
             $shield->filterRequests(
-                blockedMethods: $rf['blocked_methods'] ?? [],
-                blockedUriPatterns: $rf['blocked_uri_patterns'] ?? [],
-                blockedUserAgentPatterns: $rf['blocked_user_agents'] ?? [],
-                requiredHeaders: $rf['required_headers'] ?? [],
-                blockedHeaderValues: $rf['blocked_header_values'] ?? [],
-                maxContentLength: $rf['max_content_length'] ?? null,
-                minContentLength: $rf['min_content_length'] ?? null,
+                blockedMethods: $rf['blocked.methods'] ?? [],
+                blockedUriPatterns: $rf['blocked.uri.patterns'] ?? [],
+                blockedUserAgentPatterns: $rf['blocked.user.agents'] ?? [],
+                requiredHeaders: $rf['headers.required'] ?? [],
+                blockedHeaderValues: $rf['blocked.header.values'] ?? [],
+                maxContentLength: $rf['content.length.max'] ?? null,
+                minContentLength: $rf['content.length.min'] ?? null,
             );
         }
 
@@ -257,36 +258,36 @@ class Shield implements FirewallInterface
     {
         foreach ($this->rules as $rule) {
             if (!$rule->passes()) {
-                $this->block($rule->message());
+                // $this->block($rule->message());
+                $this->block($rule);
             }
         }
 
         return true;
     }
 
-    public function block(string $reason = 'Forbidden'): never
+    // public function block(string $reason = 'Forbidden'): never
+    public function block(RuleInterface $rule): never
     {
         $clientIp   = IpHelper::resolve($this->trustProxy);
-        $statusCode = str_contains($reason, 'Too many requests') ? 429 : 403;
 
         if (!headers_sent()) {
-            http_response_code($statusCode);
+            http_response_code($rule->statusCode());
+
+            // Set Content Type Header
             header('Content-Type: application/json; charset=UTF-8');
 
-            if ($statusCode === 429) {
-                header('Retry-After: 60');
-            }
+            // Set Additional Header
+            $rule->additionalHeader();
         }
 
-        $response = json_encode([
-            'error'   => true,
-            'status'  => $statusCode,
-            'message' => $reason,
-            'shield'  => 'Laika\\Shield',
-        ]);
+        echo json_encode([
+            'error'     =>  true,
+            'status'    =>  $rule->statusCode(),
+            'message'   =>  $rule->message(),
+            'ip'        =>  $clientIp
+        ], JSON_PRETTY_PRINT);
 
-        echo $response;
-
-        throw new FirewallException($reason, clientIp: $clientIp, code: $statusCode);
+        throw new FirewallException($rule->message(), get_class($rule), $clientIp, $rule->statusCode());
     }
 }

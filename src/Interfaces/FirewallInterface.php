@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Interfaces;
 
+use Laika\Shield\Interfaces\RuleInterface;
+
 /**
  * Interface FirewallInterface
  *
@@ -22,5 +24,5 @@ interface FirewallInterface
     /**
      * Block the current request with an appropriate HTTP response.
      */
-    public function block(string $reason = 'Forbidden'): never;
+    public function block(RuleInterface $rule): never;
 }

@@ -15,13 +15,25 @@ interface RuleInterface
 {
     /**
      * Evaluate the rule against the current request.
-     *
      * @return bool True if the request passes (is allowed), false if it should be blocked.
      */
     public function passes(): bool;
 
     /**
-     * Return the human-readable reason this rule blocked the request.
+     * Return Error Message.
+     * @return string
      */
     public function message(): string;
+
+    /**
+     * Return Response Code.
+     * @return int
+     */
+    public function statusCode(): int;
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void;
 }

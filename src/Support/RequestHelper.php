@@ -96,14 +96,20 @@ final class RequestHelper
             self::bodyParams(),
         );
 
-        // Try to parse raw body as JSON
+        // Try to parse raw body as JSON.
+        // Skip raw body entirely for multipart/form-data — PHP already parses
+        // those fields into $_POST/$_GET, and the raw multipart boundary string
+        // would produce false-positive injection detections.
+        $contentType = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+        $isMultipart = str_contains($contentType, 'multipart/form-data');
+
         $raw = self::rawBody();
-        if ($raw !== '') {
+        if (!$isMultipart && $raw !== '') {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) {
                 $inputs = array_merge($inputs, self::flatten($decoded));
             } else {
-                // Treat raw body as a single string value
+                // Treat raw body as a single string value (e.g. XML, plain text)
                 $inputs['__raw_body__'] = $raw;
             }
         }
@@ -118,8 +124,8 @@ final class RequestHelper
     /**
      * Recursively flatten a nested array into a flat key=>string array.
      *
-     * @param  array<mixed, mixed> $data
-     * @return array<string, string>
+     * @param  array<mixed,mixed> $data
+     * @return array<string,string>
      */
     private static function flatten(array $data, string $prefix = ''): array
     {

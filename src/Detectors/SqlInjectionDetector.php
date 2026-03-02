@@ -20,6 +20,16 @@ final class SqlInjectionDetector implements DetectorInterface
      * Each entry is a named pattern group for easier debugging.
      */
     private const PATTERNS = [
+        // Standalone SELECT ... FROM query
+        '/\bselect\b.{0,100}\bfrom\b/i',
+        // INSERT INTO
+        '/\binsert\b.{0,100}\binto\b/i',
+        // UPDATE ... SET
+        '/\bupdate\b.{0,100}\bset\b/i',
+        // DELETE FROM
+        '/\bdelete\b.{0,100}\bfrom\b/i',
+        // DROP TABLE / DATABASE / INDEX etc.
+        '/\bdrop\b.{0,20}\b(table|database|index|view|procedure|function)\b/i',
         // UNION-based injection
         '/(\bunion\b.{0,20}\bselect\b)/i',
         // Comment-based injection: -- or #

@@ -20,7 +20,7 @@ return [
     // Cloudflare, AWS ALB, etc.) so that Shield reads the real client IP
     // from X-Forwarded-For / CF-Connecting-IP headers.
     //
-    'trust_proxy' => false,
+    'trust.proxy' => false,
 
     // -------------------------------------------------------------------------
     // IP Blocking & Allowlisting
@@ -45,67 +45,69 @@ return [
     // Set to 4 to allow only IPv4 connections, 6 for IPv6 only.
     // Set to null (or remove the key) to allow both.
     //
-    'ip_version' => null,
+    'ip.version' => null,
 
     // -------------------------------------------------------------------------
     // Rate Limiting
     // -------------------------------------------------------------------------
-    // max_hits:    Maximum requests allowed per client IP within the window.
+    // max.hits:    Maximum requests allowed per client IP within the window.
     // window:      Window size in seconds.
-    // storage_dir: Directory for rate-limit state files.
+    // storage.dir: Directory for rate-limit state files.
     //              Defaults to sys_get_temp_dir()/laika_shield_rl
     //
-    'rate_limit' => [
-        'max_hits'    => 60,
+    'rate.limit' => [
+        'max.hits'    => 60,
         'window'      => 60,
-        'storage_dir' => null,
+        'storage.dir' => null,
     ],
 
     // -------------------------------------------------------------------------
     // SQL Injection Detection
     // -------------------------------------------------------------------------
-    // skip_keys: Input parameter names to exempt from scanning
+    // skip.keys: Input parameter names to exempt from scanning
     //            (e.g. fields where raw SQL-like syntax is expected).
-    // scan_body: Whether to also scan the raw request body (JSON APIs, etc.).
+    // scan.body: Whether to also scan the raw request body (JSON APIs, etc.).
+    // strict: Strictly Check Key(s).
     //
-    'sql_injection' => [
-        'skip_keys' => [],
-        'scan_body' => true,
+    'sql.injection' => [
+        'skip.keys' => [],
+        'scan.body' => true,
+        'strict'    => true,
     ],
 
     // -------------------------------------------------------------------------
     // XSS Detection
     // -------------------------------------------------------------------------
-    // skip_keys:    Input parameter names to exempt (e.g. rich-text editors).
-    // scan_headers: Whether to also inspect request headers.
-    // scan_body:    Whether to also scan the raw request body.
+    // skip.keys:    Input parameter names to exempt (e.g. rich-text editors).
+    // scan.headers: Whether to also inspect request headers.
+    // scan.body:    Whether to also scan the raw request body.
     //
     'xss' => [
-        'skip_keys'    => [],
-        'scan_headers' => false,
-        'scan_body'    => true,
+        'skip.keys'    => [],
+        'scan.headers' => false,
+        'scan.body'    => true,
     ],
 
     // -------------------------------------------------------------------------
     // Request Filtering
     // -------------------------------------------------------------------------
-    'request_filter' => [
+    'request.filter' => [
 
         // HTTP methods that should be rejected outright.
-        'blocked_methods' => [
+        'blocked.methods' => [
             'TRACE',
             'CONNECT',
         ],
 
         // Regex patterns matched against REQUEST_URI.
-        'blocked_uri_patterns' => [
+        'blocked.uri.patterns' => [
             // '/\/\.env$/i',
             // '/\/wp-admin/i',
             // '/\/phpmyadmin/i',
         ],
 
         // Regex patterns matched against the User-Agent header.
-        'blocked_user_agents' => [
+        'blocked.user.agents' => [
             '/sqlmap/i',
             '/nikto/i',
             '/nessus/i',
@@ -115,22 +117,22 @@ return [
         ],
 
         // Request headers that MUST be present (lowercase names).
-        'required_headers' => [
+        'headers.required' => [
             // 'x-api-key',
         ],
 
         // Map of header name => list of forbidden regex patterns.
-        'blocked_header_values' => [
+        'blocked.header.values' => [
             // 'content-type' => ['/multipart\/form-data/i'],
         ],
 
         // Block requests whose Content-Length exceeds this value (bytes).
         // null = no limit.
-        'max_content_length' => null,
+        'content.length.max' => null,
 
         // Block requests whose Content-Length is below this value.
         // null = no limit.
-        'min_content_length' => null,
+        'content.length.min' => null,
     ],
 
 ];

@@ -22,7 +22,8 @@ use Laika\Shield\Support\IpHelper;
 final class IpRule implements RuleInterface
 {
     private string $clientIp;
-    private string $blockMessage = 'Your IP address has been blocked.';
+    private string $blockMessage = 'Your IP Address Has Been Blocked.';
+    private int $statusCode = 200;
 
     /**
      * @param string[] $blocklist   IPs or CIDR ranges to block.
@@ -37,12 +38,17 @@ final class IpRule implements RuleInterface
         $this->clientIp = IpHelper::resolve($this->trustProxy);
     }
 
+    /**
+     * Check Rule Passes
+     * @return bool
+     */
     public function passes(): bool
     {
         // Allowlist check — if configured, IP must be on it
         if (!empty($this->allowlist)) {
             if (!IpHelper::inAnyCidr($this->clientIp, $this->allowlist)) {
-                $this->blockMessage = "IP {$this->clientIp} is not in the allowlist.";
+                $this->blockMessage = "IP [{$this->clientIp}] Is Not In The Allowlist.";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -50,7 +56,8 @@ final class IpRule implements RuleInterface
         // Blocklist check
         if (!empty($this->blocklist)) {
             if (IpHelper::inAnyCidr($this->clientIp, $this->blocklist)) {
-                $this->blockMessage = "IP {$this->clientIp} is blocked.";
+                $this->blockMessage = "IP [{$this->clientIp}] Is Blocked.";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -58,13 +65,36 @@ final class IpRule implements RuleInterface
         return true;
     }
 
+    /**
+     * Return Message
+     * @return string
+     */
     public function message(): string
     {
         return $this->blockMessage;
     }
 
     /**
-     * Return the resolved client IP.
+     * Return Response Code
+     * @return int
+     */
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void
+    {
+        return;
+    }
+
+    /**
+     * Return The Resolved Client IP.
+     * @return string
      */
     public function clientIp(): string
     {

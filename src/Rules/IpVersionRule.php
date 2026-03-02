@@ -19,6 +19,7 @@ final class IpVersionRule implements RuleInterface
 {
     private string $clientIp;
     private string $blockMessage = '';
+    private int $statusCode = 200;
 
     /**
      * @param int|null $allowedVersion  Pass 4 to allow only IPv4, 6 to allow only IPv6,
@@ -41,12 +42,14 @@ final class IpVersionRule implements RuleInterface
         $version = IpHelper::version($this->clientIp);
 
         if ($version === null) {
-            $this->blockMessage = "Could not detect IP version for address: {$this->clientIp}.";
+            $this->blockMessage = "Could Not Detect IP Version for Address: [{$this->clientIp}].";
+            $this->statusCode = 403;
             return false;
         }
 
         if ($version !== $this->allowedVersion) {
-            $this->blockMessage = "IPv{$version} connections are not allowed (only IPv{$this->allowedVersion} is permitted).";
+            $this->blockMessage = "IPv{$version} Connections Are Not Allowed (Only IPv{$this->allowedVersion} Is Permitted).";
+            $this->statusCode = 403;
             return false;
         }
 
@@ -56,6 +59,24 @@ final class IpVersionRule implements RuleInterface
     public function message(): string
     {
         return $this->blockMessage;
+    }
+
+    /**
+     * Return Response Code
+     * @return int
+     */
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void
+    {
+        return;
     }
 
     /**
