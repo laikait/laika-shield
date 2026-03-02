@@ -22,6 +22,7 @@ use Laika\Shield\Support\RequestHelper;
 final class RequestFilterRule implements RuleInterface
 {
     private string $blockMessage = '';
+    private int $statusCode = 200;
 
     /**
      * @param string[] $blockedMethods         HTTP methods to block (e.g. ['TRACE', 'CONNECT']).
@@ -49,7 +50,8 @@ final class RequestFilterRule implements RuleInterface
         // --- Method check ---
         $method = RequestHelper::method();
         if (!empty($this->blockedMethods) && in_array($method, $this->blockedMethods, true)) {
-            $this->blockMessage = "HTTP method \"{$method}\" is not allowed.";
+            $this->blockMessage = "HTTP Method [{$method}] Is Not Allowed.";
+            $this->statusCode = 403;
             return false;
         }
 
@@ -57,7 +59,8 @@ final class RequestFilterRule implements RuleInterface
         $uri = RequestHelper::uri();
         foreach ($this->blockedUriPatterns as $pattern) {
             if (preg_match($pattern, $uri)) {
-                $this->blockMessage = "Request URI is blocked by filter pattern: {$pattern}.";
+                $this->blockMessage = "Request URI is Blocked By Filter Pattern: {$pattern}.";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -69,7 +72,8 @@ final class RequestFilterRule implements RuleInterface
         $userAgent = $headers['user-agent'] ?? '';
         foreach ($this->blockedUserAgentPatterns as $pattern) {
             if (preg_match($pattern, $userAgent)) {
-                $this->blockMessage = "User-Agent is blocked by filter pattern: {$pattern}.";
+                $this->blockMessage = "User-Agent Is Blocked By Filter Pattern: {$pattern}.";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -77,7 +81,8 @@ final class RequestFilterRule implements RuleInterface
         // Required headers check
         foreach ($this->requiredHeaders as $required) {
             if (!isset($headers[strtolower($required)])) {
-                $this->blockMessage = "Required header \"{$required}\" is missing.";
+                $this->blockMessage = "Required Header [{$required}] Is Missing.";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -87,7 +92,8 @@ final class RequestFilterRule implements RuleInterface
             $headerValue = $headers[strtolower($headerName)] ?? '';
             foreach ($patterns as $pattern) {
                 if (preg_match($pattern, $headerValue)) {
-                    $this->blockMessage = "Header \"{$headerName}\" contains a blocked value.";
+                    $this->blockMessage = "Header [{$headerName}] Contains A Blocked Value.";
+                    $this->statusCode = 403;
                     return false;
                 }
             }
@@ -97,17 +103,33 @@ final class RequestFilterRule implements RuleInterface
         $contentLength = isset($headers['content-length'])
             ? (int) $headers['content-length']
             : null;
+        // if ($this->maxContentLength !== null && $contentLength !== null) {
+        //     if ($contentLength > $this->maxContentLength) {
+        //         $this->blockMessage = "Request Body Is Too Large ([{$contentLength}] Bytes, Max {$this->maxContentLength}).";
+        //         $this->statusCode = 403;
+        //         return false;
+        //     }
+        // }
 
-        if ($this->maxContentLength !== null && $contentLength !== null) {
+        // if ($this->minContentLength !== null && $contentLength !== null) {
+        //     if ($contentLength < $this->minContentLength) {
+        //         $this->blockMessage = "Request Body Is Too Small ([{$contentLength}] Bytes, Min {$this->minContentLength}).";
+        //         $this->statusCode = 403;
+        //         return false;
+        //     }
+        // }
+        if ($this->maxContentLength !== null) {
             if ($contentLength > $this->maxContentLength) {
-                $this->blockMessage = "Request body is too large ({$contentLength} bytes, max {$this->maxContentLength}).";
+                $this->blockMessage = "Request Body Is Too Large ([{$contentLength}] Bytes, Max {$this->maxContentLength}).";
+                $this->statusCode = 403;
                 return false;
             }
         }
 
-        if ($this->minContentLength !== null && $contentLength !== null) {
+        if ($this->minContentLength !== null) {
             if ($contentLength < $this->minContentLength) {
-                $this->blockMessage = "Request body is too small ({$contentLength} bytes, min {$this->minContentLength}).";
+                $this->blockMessage = "Request Body Is Too Small ([{$contentLength}] Bytes, Min {$this->minContentLength}).";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -115,6 +137,28 @@ final class RequestFilterRule implements RuleInterface
         return true;
     }
 
+    /**
+     * Return Response Code
+     * @return int
+     */
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void
+    {
+        return;
+    }
+
+    /**
+     * Return Messsage
+     * @return string
+     */
     public function message(): string
     {
         return $this->blockMessage;

@@ -18,6 +18,7 @@ use Laika\Shield\Support\RequestHelper;
 final class SqlInjectionRule implements RuleInterface
 {
     private string $blockMessage = '';
+    private int $statusCode = 200;
 
     /**
      * @param string[] $skipKeys  Input keys to skip (e.g. ['password', 'token']).
@@ -26,6 +27,7 @@ final class SqlInjectionRule implements RuleInterface
     public function __construct(
         private readonly array $skipKeys = [],
         private readonly bool $scanBody = true,
+        private readonly bool $strict = true,
     ) {}
 
     public function passes(): bool
@@ -36,12 +38,13 @@ final class SqlInjectionRule implements RuleInterface
             : array_merge(RequestHelper::queryParams(), RequestHelper::bodyParams());
 
         foreach ($inputs as $key => $value) {
-            if (in_array($key, $this->skipKeys, true)) {
+            if (in_array($key, $this->skipKeys, $this->strict)) {
                 continue;
             }
 
             if ($detector->detect($value)) {
-                $this->blockMessage = "SQL injection detected in input key: \"{$key}\".";
+                $this->blockMessage = "SQL Injection Detected In Input Key: [{$key}].";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -49,6 +52,28 @@ final class SqlInjectionRule implements RuleInterface
         return true;
     }
 
+    /**
+     * Return Response Code
+     * @return int
+     */
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void
+    {
+        return;
+    }
+
+    /**
+     * Return Messsage
+     * @return string
+     */
     public function message(): string
     {
         return $this->blockMessage;

@@ -53,7 +53,7 @@ class IpRuleTest extends TestCase
     {
         $rule = $this->ruleWithIp('8.8.8.8', allowlist: ['203.0.113.0/24']);
         $this->assertFalse($rule->passes());
-        $this->assertStringContainsString('allowlist', $rule->message());
+        $this->assertStringContainsString('Allowlist', $rule->message());
     }
 
     public function testNoRulesAlwaysPasses(): void

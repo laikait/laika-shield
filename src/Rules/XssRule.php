@@ -18,6 +18,7 @@ use Laika\Shield\Support\RequestHelper;
 final class XssRule implements RuleInterface
 {
     private string $blockMessage = '';
+    private int $statusCode = 200;
 
     /**
      * @param string[] $skipKeys      Input keys to skip (e.g. ['content', 'html_body']).
@@ -48,7 +49,8 @@ final class XssRule implements RuleInterface
             }
 
             if ($detector->detect($value)) {
-                $this->blockMessage = "XSS attack detected in input key: \"{$key}\".";
+                $this->blockMessage = "XSS Attack Detected In Input Key: [{$key}].";
+                $this->statusCode = 403;
                 return false;
             }
         }
@@ -56,6 +58,28 @@ final class XssRule implements RuleInterface
         return true;
     }
 
+    /**
+     * Return Response Code
+     * @return int
+     */
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void
+    {
+        return;
+    }
+
+    /**
+     * Return Messsage
+     * @return string
+     */
     public function message(): string
     {
         return $this->blockMessage;

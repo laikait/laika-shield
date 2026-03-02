@@ -20,6 +20,7 @@ final class RateLimitRule implements RuleInterface
 {
     private readonly string $clientIp;
     private int $retryAfter = 0;
+    private int $statusCode = 200;
 
     /**
      * @param int         $maxHits     Maximum number of requests allowed per window.
@@ -45,6 +46,7 @@ final class RateLimitRule implements RuleInterface
 
         if ($limiter->tooMany($key, $this->maxHits, $this->windowSecs)) {
             $this->retryAfter = $limiter->retryAfter($key);
+            $this->statusCode = 429;
             return false;
         }
 
@@ -54,10 +56,29 @@ final class RateLimitRule implements RuleInterface
     public function message(): string
     {
         return sprintf(
-            'Too many requests from %s. Please wait %d second(s) before retrying.',
+            'Too Many Requests From %s. Please Wait %d Second(s) Before Retrying.',
             $this->clientIp,
             $this->retryAfter,
         );
+    }
+
+    /**
+     * Return Response Code
+     * @return int
+     */
+    public function statusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * Set Addetional Header if Required. Example: header('Refresh: 0');
+     * @return void
+     */
+    public function additionalHeader(): void
+    {
+        header('Retry-After: 60');
+        return;
     }
 
     /**
