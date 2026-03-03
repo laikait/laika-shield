@@ -23,10 +23,10 @@ use Laika\Shield\Support\IpHelper;
  * Usage — quick static API:
  *
  *   Shield::boot([
- *       'ip' => ['blocklist' => ['1.2.3.4']],
- *       'rate_limit' => ['max_hits' => 100, 'window' => 60],
- *       'sql_injection' => true,
- *       'xss' => true,
+ *       'ip'            => ['blocklist' => ['1.2.3.4']],
+ *       'rate.limit'    => ['max.hits' => 100, 'window' => 60],
+ *       'sql.injection' => true,
+ *       'xss'           => true,
  *   ]);
  *
  * Usage — fluent builder API:
@@ -55,14 +55,17 @@ class Shield implements FirewallInterface
 
     /**
      * Boot the firewall from a configuration array and immediately run it.
-     * Intended for use in the Laika framework's bootstrap/middleware pipeline.
+     * If no config is passed, defaults are loaded from Config::get().
      *
-     * @param  array<string, mixed> $config  See shield.php config for all options.
+     * @param  array<string,mixed> $config  See shield.php config for all options.
      * @throws FirewallException
      */
     public static function boot(array $config = []): void
     {
         $shield = new self();
+
+        // Fall back to Config class defaults when no array is provided
+        $config = empty($config) ? Config::get() : $config;
 
         $trustProxy = (bool) ($config['trust.proxy'] ?? false);
         $shield->trustProxy($trustProxy);
@@ -179,10 +182,13 @@ class Shield implements FirewallInterface
      * Enable SQL injection detection.
      *
      * @param string[] $skipKeys
+     * @param bool     $scanBody  Scan raw request body.
+     * @param bool     $strict    When true, also blocks standalone DML keywords
+     *                            (SELECT/INSERT/UPDATE/DELETE/DROP).
      */
-    public function detectSqlInjection(array $skipKeys = [], bool $scanBody = true): static
+    public function detectSqlInjection(array $skipKeys = [], bool $scanBody = true, bool $strict = true): static
     {
-        $this->rules[] = new SqlInjectionRule($skipKeys, $scanBody);
+        $this->rules[] = new SqlInjectionRule($skipKeys, $scanBody, $strict);
         return $this;
     }
 
@@ -204,7 +210,7 @@ class Shield implements FirewallInterface
      * @param string[]                $blockedUriPatterns
      * @param string[]                $blockedUserAgentPatterns
      * @param string[]                $requiredHeaders
-     * @param array<string, string[]> $blockedHeaderValues
+     * @param array<string,string[]>  $blockedHeaderValues
      */
     public function filterRequests(
         array $blockedMethods = [],
@@ -249,7 +255,6 @@ class Shield implements FirewallInterface
     public function run(): void
     {
         if (!$this->inspect()) {
-            // inspect() already called block() internally — this line is a safeguard.
             exit;
         }
     }
