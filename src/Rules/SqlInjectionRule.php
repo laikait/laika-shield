@@ -23,6 +23,8 @@ final class SqlInjectionRule implements RuleInterface
     /**
      * @param string[] $skipKeys  Input keys to skip (e.g. ['password', 'token']).
      * @param bool     $scanBody  Whether to also scan the raw request body.
+     * @param bool     $strict    When true, also blocks standalone DML keywords
+     *                            (SELECT/INSERT/UPDATE/DELETE/DROP).
      */
     public function __construct(
         private readonly array $skipKeys = [],
@@ -32,13 +34,13 @@ final class SqlInjectionRule implements RuleInterface
 
     public function passes(): bool
     {
-        $detector = new SqlInjectionDetector();
+        $detector = new SqlInjectionDetector($this->strict);
         $inputs   = $this->scanBody
             ? RequestHelper::allInput()
             : array_merge(RequestHelper::queryParams(), RequestHelper::bodyParams());
 
         foreach ($inputs as $key => $value) {
-            if (in_array($key, $this->skipKeys, $this->strict)) {
+            if (in_array($key, $this->skipKeys, true)) {
                 continue;
             }
 

@@ -56,7 +56,7 @@ final class IpRule implements RuleInterface
         // Blocklist check
         if (!empty($this->blocklist)) {
             if (IpHelper::inAnyCidr($this->clientIp, $this->blocklist)) {
-                $this->blockMessage = "IP [{$this->clientIp}] Is Blocked.";
+                $this->blockMessage = "IP [{$this->clientIp}] Is Blocked. Please Contact Administrator.";
                 $this->statusCode = 403;
                 return false;
             }

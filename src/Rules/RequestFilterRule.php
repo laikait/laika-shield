@@ -103,21 +103,7 @@ final class RequestFilterRule implements RuleInterface
         $contentLength = isset($headers['content-length'])
             ? (int) $headers['content-length']
             : null;
-        // if ($this->maxContentLength !== null && $contentLength !== null) {
-        //     if ($contentLength > $this->maxContentLength) {
-        //         $this->blockMessage = "Request Body Is Too Large ([{$contentLength}] Bytes, Max {$this->maxContentLength}).";
-        //         $this->statusCode = 403;
-        //         return false;
-        //     }
-        // }
 
-        // if ($this->minContentLength !== null && $contentLength !== null) {
-        //     if ($contentLength < $this->minContentLength) {
-        //         $this->blockMessage = "Request Body Is Too Small ([{$contentLength}] Bytes, Min {$this->minContentLength}).";
-        //         $this->statusCode = 403;
-        //         return false;
-        //     }
-        // }
         if ($this->maxContentLength !== null) {
             if ($contentLength > $this->maxContentLength) {
                 $this->blockMessage = "Request Body Is Too Large ([{$contentLength}] Bytes, Max {$this->maxContentLength}).";
