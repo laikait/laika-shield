@@ -56,6 +56,10 @@ $middleware->handle(function () {
 ```php
 use Laika\Shield\Shield;
 
+// Auto-loads defaults from Config — no argument needed
+Shield::boot();
+
+// Or pass a custom config array
 Shield::boot(require 'config/shield.php');
 ```
 
@@ -88,7 +92,7 @@ use Laika\Shield\Shield;
 return [
 
     // Trust proxy headers (X-Forwarded-For, CF-Connecting-IP, etc.)
-    'trust_proxy' => false,
+    'trust.proxy' => false,
 
     // IP blocking and allowlisting
     'ip' => [
@@ -97,40 +101,79 @@ return [
     ],
 
     // Only allow IPv4 (4) or IPv6 (6). null = both allowed.
-    'ip_version' => null,
+    'ip.version' => null,
 
     // Rate limiting
-    'rate_limit' => [
-        'max_hits'    => 60,    // requests
+    'rate.limit' => [
+        'max.hits'    => 60,    // requests
         'window'      => 60,    // seconds
-        'storage_dir' => null,  // defaults to sys_get_temp_dir()
+        'storage.dir' => null,  // defaults to sys_get_temp_dir()
     ],
 
     // SQL injection detection
-    'sql_injection' => [
-        'skip_keys' => [],      // input keys to skip
-        'scan_body' => true,    // also scan raw body (JSON, XML)
+    'sql.injection' => [
+        'skip.keys' => [],      // input keys to skip
+        'scan.body' => true,    // also scan raw body (JSON, XML)
+        'strict'    => true,    // also block standalone DML (SELECT/INSERT/UPDATE/DELETE/DROP)
     ],
 
     // XSS detection
     'xss' => [
-        'skip_keys'    => [],
-        'scan_headers' => false,
-        'scan_body'    => true,
+        'skip.keys'    => [],
+        'scan.headers' => false,
+        'scan.body'    => true,
     ],
 
     // Request filtering
-    'request_filter' => [
-        'blocked_methods'        => ['TRACE', 'CONNECT'],
-        'blocked_uri_patterns'   => ['/\/\.env$/i'],
-        'blocked_user_agents'    => ['/sqlmap/i', '/nikto/i'],
-        'required_headers'       => [],
-        'blocked_header_values'  => [],
-        'max_content_length'     => null,
-        'min_content_length'     => null,
+    'request.filter' => [
+        'blocked.methods'       => ['TRACE', 'CONNECT'],
+        'blocked.uri.patterns'  => ['/\/\.env$/i'],
+        'blocked.user.agents'   => ['/sqlmap/i', '/nikto/i'],
+        'headers.required'      => [],
+        'blocked.header.values' => [],
+        'content.length.max'    => null,
+        'content.length.min'    => null,
     ],
 ];
 ```
+
+---
+
+## 🔧 Config Class
+
+The `Config` class provides a fluent API to load and modify the default configuration at runtime — without editing the config file directly.
+
+```php
+use Laika\Shield\Config;
+use Laika\Shield\Shield;
+
+// Top-level scalar
+Config::add('trust.proxy', true);
+
+// Top-level array merge
+Config::add('ip', ['blocklist' => ['1.2.3.4', '10.0.0.0/8']]);
+
+// Sub-key update (simplest way to change a nested value)
+Config::add('rate.limit', 'max.hits', 30);
+Config::add('sql.injection', 'skip.keys', ['password', 'token']);
+Config::add('xss', 'skip.keys', ['content', 'body']);
+Config::add('request.filter', 'content.length.max', 2048);
+
+// Boot uses Config automatically when no array is passed
+Shield::boot();
+```
+
+### Config API
+
+| Method | Description |
+|---|---|
+| `Config::add(string $key, mixed $value)` | Set or merge a top-level config key |
+| `Config::add(string $key, string $subKey, mixed $value)` | Set or merge a specific sub-key |
+| `Config::get()` | Return the full config array |
+| `Config::get(string $key)` | Return the value of a single key |
+| `Config::has(string $key)` | Check if a key exists |
+| `Config::keys()` | Return all top-level config keys |
+| `Config::reset()` | Reset the singleton (useful in tests) |
 
 ---
 
@@ -139,9 +182,10 @@ return [
 ```
 src/
 ├── Shield.php                          # Main firewall engine (static + fluent API)
+├── Config.php                          # Runtime configuration manager
 ├── Interfaces/
 │   ├── FirewallInterface.php           # Core Firewall Interface
-│   ├── RuleInterface.php              # Individual Rule Interface
+│   ├── RuleInterface.php               # Individual Rule Interface
 │   └── DetectorInterface.php          # Pattern Detector Interface
 ├── Rules/
 │   ├── IpRule.php                     # IP blocking / allowlisting
@@ -185,7 +229,17 @@ class CountryBlockRule implements RuleInterface
 
     public function message(): string
     {
-        return 'Access denied from your country.';
+        return 'Access Denied From Your Country.';
+    }
+
+    public function statusCode(): int
+    {
+        return 403;
+    }
+
+    public function additionalHeader(): void
+    {
+        return;
     }
 }
 
