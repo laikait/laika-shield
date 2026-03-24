@@ -16,14 +16,28 @@ class ComposerStaticInitbd69fa93d0deb81078b711989e73937c
         array (
             'PhpParser\\' => 10,
         ),
+        'M' =>
+        array (
+            'MaxMind\\WebService\\' => 19,
+            'MaxMind\\Exception\\' => 18,
+            'MaxMind\\Db\\' => 11,
+        ),
         'L' =>
         array (
             'Laika\\Shield\\Tests\\' => 19,
             'Laika\\Shield\\' => 13,
         ),
+        'G' =>
+        array (
+            'GeoIp2\\' => 7,
+        ),
         'D' =>
         array (
             'DeepCopy\\' => 9,
+        ),
+        'C' =>
+        array (
+            'Composer\\CaBundle\\' => 18,
         ),
     );
 
@@ -31,6 +45,18 @@ class ComposerStaticInitbd69fa93d0deb81078b711989e73937c
         'PhpParser\\' =>
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'MaxMind\\WebService\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/WebService',
+        ),
+        'MaxMind\\Exception\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/Exception',
+        ),
+        'MaxMind\\Db\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
         ),
         'Laika\\Shield\\Tests\\' =>
         array (
@@ -40,9 +66,17 @@ class ComposerStaticInitbd69fa93d0deb81078b711989e73937c
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
+        'GeoIp2\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
+        ),
         'DeepCopy\\' =>
         array (
             0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
+        ),
+        'Composer\\CaBundle\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
         ),
     );
 

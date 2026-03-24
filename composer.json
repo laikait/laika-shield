@@ -3,29 +3,21 @@
     "description": "A powerful firewall middleware package for the Laika PHP Framework — IP filtering, rate limiting, SQL injection & XSS detection, and request filtering.",
     "type": "package",
     "license": "MIT",
-    "keywords": [
-        "laika",
-        "firewall",
-        "security",
-        "middleware",
-        "ip-blocking",
-        "rate-limiting",
-        "sql-injection",
-        "xss",
-        "php"
-    ],
+    "keywords": ["laika", "firewall", "security", "middleware", "ip-blocking", "rate-limiting", "sql-injection", "xss", "php"],
     "authors": [
         {
             "name": "Laika IT",
             "email": "strblackhawk@gmail.com"
         },
         {
-            "name": "SHowket Ahmed",
+            "name": "Showket Ahmed",
             "email": "riyadhtayf@gmail.com"
         }
     ],
     "require": {
-        "php": ">=8.1"
+        "php": ">=8.1",
+        "ext-json": "*",
+        "geoip2/geoip2": "^3"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0"

@@ -41,7 +41,7 @@ class Config
 
     private function __construct()
     {
-        $this->config = require __DIR__ . '/Config/shield.php';
+        $this->config = require __DIR__ . '/Storage/config.sample.php';
     }
 
     // -------------------------------------------------------------------------
