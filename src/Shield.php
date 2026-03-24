@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Laika\Shield;
 
 use Laika\Shield\Interfaces\FirewallInterface;
-use Laika\Shield\Interfaces\RuleInterface;
 use Laika\Shield\Exceptions\FirewallException;
-use Laika\Shield\Rules\IpRule;
-use Laika\Shield\Rules\IpVersionRule;
-use Laika\Shield\Rules\RateLimitRule;
+use Laika\Shield\Interfaces\RuleInterface;
 use Laika\Shield\Rules\RequestFilterRule;
 use Laika\Shield\Rules\SqlInjectionRule;
-use Laika\Shield\Rules\XssRule;
+use Laika\Shield\Rules\IpVersionRule;
+use Laika\Shield\Rules\RateLimitRule;
+use Laika\Shield\Rules\CountryRule;
 use Laika\Shield\Support\IpHelper;
+use Laika\Shield\Rules\XssRule;
+use Laika\Shield\Rules\IpRule;
 
 /**
  * Class Shield
@@ -47,6 +48,7 @@ class Shield implements FirewallInterface
     /** @var RuleInterface[] */
     private array $rules = [];
 
+    /** @var bool $trustProxy */
     private bool $trustProxy = false;
 
     // -------------------------------------------------------------------------
@@ -69,6 +71,14 @@ class Shield implements FirewallInterface
 
         $trustProxy = (bool) ($config['trust.proxy'] ?? false);
         $shield->trustProxy($trustProxy);
+
+        // Country blocking
+        if (!empty($config['country'])) {
+            $c = $config['country'];
+            if (!empty($c['db'])) {
+                $shield->blockCountries($c['db'], $c['blocklist'] ?? [], $c['allowlist'] ?? []);
+            }
+        }
 
         // IP blocking / allowlisting
         if (!empty($config['ip'])) {
@@ -135,6 +145,19 @@ class Shield implements FirewallInterface
     public function trustProxy(bool $trust = true): static
     {
         $this->trustProxy = $trust;
+        return $this;
+    }
+
+    /**
+     * Block and/or allowlist requests by country (ISO 3166-1 alpha-2 codes).
+     * Requires a local MaxMind GeoLite2-Country .mmdb file.
+     *
+     * @param string[] $blocklist  Country codes to block (e.g. ['CN', 'RU']).
+     * @param string[] $allowlist  When non-empty, ONLY these countries are allowed.
+     */
+    public function blockCountries(string $dbPath, array $blocklist = [], array $allowlist = []): static
+    {
+        $this->rules[] = new CountryRule($dbPath, $blocklist, $allowlist, $this->trustProxy);
         return $this;
     }
 

@@ -12,6 +12,7 @@
 
 | Feature | Description |
 |---|---|
+| 🌍 Country Blocking | Block or allowlist entire countries via MaxMind GeoLite2 |
 | 🚫 IP Blocking | Block individual IPs or CIDR ranges |
 | ✅ IP Allowlisting | Restrict access to specific IPs/ranges only |
 | 🔢 IP Version Filtering | Allow only IPv4 or only IPv6 connections |
@@ -70,6 +71,7 @@ use Laika\Shield\Shield;
 
 (new Shield())
     ->trustProxy()
+    ->blockCountries('/path/to/GeoLite2-Country.mmdb', blocklist: ['CN', 'RU'])
     ->blockIps(['1.2.3.4', '10.10.0.0/16'])
     ->allowIps(['203.0.113.0/24'])
     ->requireIpVersion(4) // IPv4 only
@@ -90,6 +92,13 @@ use Laika\Shield\Shield;
 ```php
 // config/shield.php
 return [
+
+    // Country blocking (requires MaxMind GeoLite2-Country.mmdb)
+    'country' => [
+        'db'        => '/path/to/GeoLite2-Country.mmdb',
+        'blocklist' => ['CN', 'RU'],  // block these countries
+        'allowlist' => [],            // when non-empty, ONLY these countries allowed
+    ],
 
     // Trust proxy headers (X-Forwarded-For, CF-Connecting-IP, etc.)
     'trust.proxy' => false,
@@ -191,10 +200,12 @@ src/
 │   ├── IpRule.php                     # IP blocking / allowlisting
 │   ├── IpVersionRule.php              # IPv4 / IPv6 enforcement
 │   ├── RateLimitRule.php              # Rate limiting
+│   ├── CountryRule.php                # Country blocking / allowlisting
 │   ├── SqlInjectionRule.php           # SQL injection protection
 │   ├── XssRule.php                    # XSS protection
 │   └── RequestFilterRule.php          # General request filtering
 ├── Detectors/
+│   ├── GeoIpDetector.php              # MaxMind GeoLite2 country resolver
 │   ├── SqlInjectionDetector.php       # SQLi regex patterns engine
 │   └── XssDetector.php                # XSS regex patterns engine
 ├── Http/
