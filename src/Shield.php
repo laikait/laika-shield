@@ -286,7 +286,6 @@ class Shield implements FirewallInterface
     {
         foreach ($this->rules as $rule) {
             if (!$rule->passes()) {
-                // $this->block($rule->message());
                 $this->block($rule);
             }
         }
@@ -302,20 +301,16 @@ class Shield implements FirewallInterface
         if (!headers_sent()) {
             http_response_code($rule->statusCode());
 
-            // Set Content Type Header
-            header('Content-Type: application/json; charset=UTF-8');
-
             // Set Additional Header
             $rule->additionalHeader();
         }
 
-        echo json_encode([
-            'error'     =>  true,
+        $message = json_encode([
             'status'    =>  $rule->statusCode(),
             'message'   =>  $rule->message(),
             'ip'        =>  $clientIp
-        ], JSON_PRETTY_PRINT);
+        ]);
 
-        throw new FirewallException($rule->message(), get_class($rule), $clientIp, $rule->statusCode());
+        throw new FirewallException($message, get_class($rule), $clientIp, $rule->statusCode());
     }
 }

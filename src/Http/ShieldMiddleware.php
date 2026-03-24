@@ -20,8 +20,9 @@ use Laika\Shield\Shield;
  * Or manually:
  *
  *   use Laika\Shield\Http\ShieldMiddleware;
+ *   use Laika\Shield\Config;
  *
- *   $middleware = new ShieldMiddleware(require 'config/shield.php');
+ *   $middleware = new ShieldMiddleware(Config::get());
  *   $middleware->handle();
  *
  * @package Laika\Shield\Http
@@ -50,6 +51,7 @@ class ShieldMiddleware
         try {
             Shield::boot($this->config);
         } catch (FirewallException $e) {
+            echo $e->getMessage();
             // FirewallException is already handled inside Shield::block()
             // (headers sent, JSON output written). We just halt here.
             exit;

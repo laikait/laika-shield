@@ -19,28 +19,45 @@ use MaxMind\Db\Reader\InvalidDatabaseException;
 final class GeoIpDetector
 {
     private Reader $reader;
+    private string $ip;
 
     /**
      * @param string $dbPath  Absolute path to the GeoLite2-Country.mmdb file.
      * @throws InvalidDatabaseException
      */
-    public function __construct(string $dbPath)
+    public function __construct(string $dbPath, string $ip)
     {
         $this->reader = new Reader($dbPath);
+        $this->ip = $ip;
     }
 
     /**
      * Resolve the ISO 3166-1 alpha-2 country code for the given IP.
      * Returns null if the IP is private, loopback, or not found in the DB.
      *
-     * @param  string $ip
      * @return string|null  e.g. 'US', 'CN', 'RU'
      */
-    public function detect(string $ip): ?string
+    public function detect(): ?string
     {
         try {
-            $record = $this->reader->country($ip);
+            $record = $this->reader->country($this->ip);
             return $record->country->isoCode;
+        } catch (AddressNotFoundException) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve the ISO 3166-1 alpha-2 country code for the given IP.
+     * Returns null if the IP is private, loopback, or not found in the DB.
+     *
+     * @return string|null  e.g. 'US', 'CN', 'RU'
+     */
+    public function name(): ?string
+    {
+        try {
+            $record = $this->reader->country($this->ip);
+            return $record->country->name;
         } catch (AddressNotFoundException) {
             return null;
         }

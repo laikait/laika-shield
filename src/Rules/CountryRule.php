@@ -43,9 +43,8 @@ final class CountryRule implements RuleInterface
 
     public function passes(): bool
     {
-        $detector = new GeoIpDetector($this->dbPath);
-        $country  = $detector->detect($this->clientIp);
-        var_dump($country);
+        $detector = new GeoIpDetector($this->dbPath, $this->clientIp);
+        $country  = $detector->detect();
 
         // Private/loopback IPs won't resolve — let them through
         if ($country === null) {
@@ -58,7 +57,7 @@ final class CountryRule implements RuleInterface
         if (!empty($this->allowlist)) {
             $allowlist = array_map('strtoupper', $this->allowlist);
             if (!in_array($country, $allowlist, true)) {
-                $this->blockMessage = "Access From Country [{$country}] Is Not Allowed.";
+                $this->blockMessage = "Access From Country [{$detector->name()}] Is Not Allowed.";
                 return false;
             }
         }
@@ -67,7 +66,7 @@ final class CountryRule implements RuleInterface
         if (!empty($this->blocklist)) {
             $blocklist = array_map('strtoupper', $this->blocklist);
             if (in_array($country, $blocklist, true)) {
-                $this->blockMessage = "Access From Country [{$country}] Is Blocked.";
+                $this->blockMessage = "Access From Country [{$detector->name()}] Is Blocked.";
                 return false;
             }
         }
