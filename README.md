@@ -35,7 +35,7 @@ composer require laikait/laika-shield
 
 ### 1. Publish the config file
 
-Copy `vendor/laikait/laika-shield/src/Config/shield.php` to your project's `config/` directory.
+Copy `vendor/laikait/laika-shield/src/Storage/config.sample.php` to your project's `Storage/` directory.
 
 ### 2. Register as Middleware
 
@@ -44,7 +44,7 @@ In your Laika application bootstrap or middleware pipeline:
 ```php
 use Laika\Shield\Http\ShieldMiddleware;
 
-$config = require __DIR__ . '/../config/shield.php';
+$config = require __DIR__ . '/../Storage/config.sample.php';
 
 $middleware = new ShieldMiddleware($config);
 $middleware->handle(function () {
@@ -56,12 +56,13 @@ $middleware->handle(function () {
 
 ```php
 use Laika\Shield\Shield;
+use Laika\Shield\Config;
 
 // Auto-loads defaults from Config — no argument needed
 Shield::boot();
 
 // Or pass a custom config array
-Shield::boot(require 'config/shield.php');
+Shield::boot(Config::get());
 ```
 
 ### 4. Or use the fluent builder
@@ -90,7 +91,7 @@ use Laika\Shield\Shield;
 ## ⚙️ Configuration Reference
 
 ```php
-// config/shield.php
+// Storage/config.sample.php
 return [
 
     // Country blocking (requires MaxMind GeoLite2-Country.mmdb)
@@ -213,12 +214,12 @@ src/
 ├── Support/
 │   ├── IpHelper.php                   # IP validation, CIDR, version detection
 │   ├── RateLimiter.php                # File-based rate limit store
-│   └── RequestHelper.php             # Request data extraction helpers
+│   └── RequestHelper.php              # Request data extraction helpers
 ├── Exceptions/
 │   ├── FirewallException.php          # Base firewall exception (HTTP 403)
 │   └── RateLimitExceededException.php # Rate limit exception (HTTP 429)
-└── Config/
-    └── shield.php                     # Default configuration template
+└── Storage/
+    └── config.sample.php              # Default configuration template
 ```
 
 ---
