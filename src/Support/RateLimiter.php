@@ -1,4 +1,9 @@
 <?php
+/**
+ * Name: Laika Shield
+ * Provider: Laika IT
+ * Email: strblackhawk@gmail.com
+ */
 
 declare(strict_types=1);
 

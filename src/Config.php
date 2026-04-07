@@ -1,4 +1,9 @@
 <?php
+/**
+ * Name: Laika Shield
+ * Provider: Laika IT
+ * Email: strblackhawk@gmail.com
+ */
 
 declare(strict_types=1);
 
@@ -34,45 +39,25 @@ namespace Laika\Shield;
  */
 class Config
 {
-    private static ?self $instance = null;
+    private static ?Config $instance = null;
 
     /** @var array<string,mixed> */
     protected array $config = [];
 
-    private function __construct()
-    {
-        $this->config = require __DIR__ . '/Storage/config.sample.php';
-    }
-
-    // -------------------------------------------------------------------------
-    // Singleton Access
-    // -------------------------------------------------------------------------
-
-    private static function getInstance(): static
-    {
-        if (static::$instance === null) {
-            static::$instance = new static();
-        }
-
-        return static::$instance;
-    }
-
-    // -------------------------------------------------------------------------
-    // API
-    // -------------------------------------------------------------------------
+    ######################################################################
+    /*========================== EXTERNAL API ==========================*/
+    ######################################################################
 
     /**
      * Add or merge a value into the config.
-     *
-     * - If $subKey is provided, only that sub-key is updated.
-     * - If the existing value and $value are both arrays, they are merged.
-     * - Otherwise the existing value is overwritten.
-     *
+     * @param string $add Config Key
+     * @param mixed $subKeyOrValue Sub Key Or Value
+     * @param mixed $value Default is Null
      * @return void
      */
     public static function add(string $key, mixed $subKeyOrValue, mixed $value = null): void
     {
-        $instance = static::getInstance();
+        self::init();
 
         // Two-argument call: Config::add('sql.injection', ['skip.keys' => [...]])
         // Three-argument call: Config::add('sql.injection', 'skip.keys', [...])
@@ -81,9 +66,9 @@ class Config
             $existing = $instance->config[$key][$subKey] ?? null;
 
             if (is_array($existing) && is_array($value)) {
-                $instance->config[$key][$subKey] = array_merge($existing, $value);
+                self::$instance->config[$key][$subKey] = array_merge($existing, $value);
             } else {
-                $instance->config[$key][$subKey] = $value;
+                self::$instance->config[$key][$subKey] = $value;
             }
 
             return;
@@ -92,9 +77,9 @@ class Config
         $existing = $instance->config[$key] ?? null;
 
         if (is_array($existing) && is_array($subKeyOrValue)) {
-            $instance->config[$key] = array_merge($existing, $subKeyOrValue);
+            self::$instance->config[$key] = array_merge($existing, $subKeyOrValue);
         } else {
-            $instance->config[$key] = $subKeyOrValue;
+            self::$instance->config[$key] = $subKeyOrValue;
         }
 
         return;
@@ -102,20 +87,22 @@ class Config
 
     /**
      * Check whether a top-level key exists in the current config.
+     * @return bool
      */
     public static function has(string $key): bool
     {
-        return array_key_exists($key, static::getInstance()->config);
+        self::init();
+        return array_key_exists($key, self::$instance->config);
     }
 
     /**
      * Return all valid top-level config keys.
-     *
      * @return string[]
      */
     public static function keys(): array
     {
-        return array_keys(static::getInstance()->config);
+        self::init();
+        return array_keys(self::$instance->config);
     }
 
     /**
@@ -125,15 +112,32 @@ class Config
      */
     public static function get(?string $key = null): mixed
     {
-        $instance = static::getInstance();
-        return !empty($key) ? $instance->config[$key] : $instance->config;
+        self::init();
+        return !empty($key) ? self::$instance->config[$key] : self::$instance->config;
     }
 
     /**
      * Reset Config
+     * @return void
      */
     public static function reset(): void
     {
         static::$instance = null;
+    }
+
+    ######################################################################
+    /*========================== INTERNAL API ==========================*/
+    ######################################################################
+
+    /**
+     * Initiate Instance
+     * @return static
+     */
+    private static function init(): void
+    {
+        if (static::$instance === null) {
+            static::$instance = new static();
+            static::$instance->config = require __DIR__ . '/Storage/config.sample.php';
+        }
     }
 }

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Name: Laika Shield
+ * Provider: Laika IT
+ * Email: strblackhawk@gmail.com
+ */
 
 declare(strict_types=1);
 
@@ -7,6 +12,7 @@ namespace Laika\Shield\Http;
 use Laika\Shield\Exceptions\FirewallException;
 use Laika\Shield\Exceptions\RateLimitExceededException;
 use Laika\Shield\Shield;
+use Closure;
 
 /**
  * Class ShieldMiddleware
@@ -26,6 +32,7 @@ use Laika\Shield\Shield;
  *   $middleware->handle();
  *
  * @package Laika\Shield\Http
+ * @deprecated
  */
 class ShieldMiddleware
 {
@@ -44,24 +51,16 @@ class ShieldMiddleware
      * Call this from your Laika middleware pipeline.
      * @throws FirewallException If blocked by a generic rule.
      * @throws RateLimitExceededException If rate limit is exceeded.
-     * @return mixed
      */
-    public function handle(?callable $next = null): mixed
+    public function handle(Closure $next, array $params)
     {
         try {
             Shield::boot($this->config);
         } catch (FirewallException $e) {
-            echo $e->getMessage();
-            // FirewallException is already handled inside Shield::block()
-            // (headers sent, JSON output written). We just halt here.
-            exit;
+            unset($params);
+            $next(['blocked' => $e->getMessage()]);
         }
 
-        // All rules passed — pass control to the next middleware or controller.
-        if ($next !== null) {
-            return $next();
-        }
-
-        return null;
+        return $next($params);
     }
 }
