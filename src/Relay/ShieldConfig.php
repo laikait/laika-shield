@@ -11,7 +11,7 @@ namespace Laika\Shield\Relay;
 
 use Laika\Core\Relay\Relay;
 
-class Config extends Relay
+class ShieldConfig extends Relay
 {
     /**
      * @method static void add(string $key, mixed $subKeyOrValue, mixed $value = null)
@@ -22,6 +22,6 @@ class Config extends Relay
      */
     public static function getRelayAccessor(): string
     {
-        return 'config';
+        return 'shieldconfig';
     }
 }
