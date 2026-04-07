@@ -1,4 +1,9 @@
 <?php
+/**
+ * Name: Laika Shield
+ * Provider: Laika IT
+ * Email: strblackhawk@gmail.com
+ */
 
 declare(strict_types=1);
 
@@ -58,13 +63,13 @@ class Shield implements FirewallInterface
     /**
      * Boot the firewall from a configuration array and immediately run it.
      * If no config is passed, defaults are loaded from Config::get().
-     *
-     * @param  array<string,mixed> $config  See shield.php config for all options.
+     * @param array<string,mixed> $config  See shield.php config for all options.
      * @throws FirewallException
+     * @return void
      */
     public static function boot(array $config = []): void
     {
-        $shield = new self();
+        $shield = new static();
 
         // Fall back to Config class defaults when no array is provided
         $config = empty($config) ? Config::get() : $config;
@@ -142,6 +147,10 @@ class Shield implements FirewallInterface
     // Fluent Builder
     // -------------------------------------------------------------------------
 
+    /**
+     * Trust Proxy
+     * @return static
+     */
     public function trustProxy(bool $trust = true): static
     {
         $this->trustProxy = $trust;
@@ -151,21 +160,22 @@ class Shield implements FirewallInterface
     /**
      * Block and/or allowlist requests by country (ISO 3166-1 alpha-2 codes).
      * Requires a local MaxMind GeoLite2-Country .mmdb file.
-     *
+     * @param string $mmdb  GeoIP Location DB Path
      * @param string[] $blocklist  Country codes to block (e.g. ['CN', 'RU']).
      * @param string[] $allowlist  When non-empty, ONLY these countries are allowed.
+     * @return static
      */
-    public function blockCountries(string $dbPath, array $blocklist = [], array $allowlist = []): static
+    public function blockCountries(string $mmdb, array $blocklist = [], array $allowlist = []): static
     {
-        $this->rules[] = new CountryRule($dbPath, $blocklist, $allowlist, $this->trustProxy);
+        $this->rules[] = new CountryRule($mmdb, $blocklist, $allowlist, $this->trustProxy);
         return $this;
     }
 
     /**
      * Block and/or allowlist IP addresses or CIDR ranges.
-     *
      * @param string[] $blocklist
      * @param string[] $allowlist
+     * @return static
      */
     public function blockIps(array $blocklist = [], array $allowlist = []): static
     {
@@ -175,8 +185,8 @@ class Shield implements FirewallInterface
 
     /**
      * Only allow connections from the given IPs / CIDR ranges.
-     *
      * @param string[] $allowlist
+     * @return static
      */
     public function allowIps(array $allowlist): static
     {
@@ -185,6 +195,7 @@ class Shield implements FirewallInterface
 
     /**
      * Restrict to a specific IP version (4 or 6).
+     * @return static
      */
     public function requireIpVersion(int $version): static
     {
@@ -194,6 +205,7 @@ class Shield implements FirewallInterface
 
     /**
      * Enable rate limiting.
+     * @return static
      */
     public function rateLimit(int $maxHits = 60, int $windowSecs = 60, ?string $storageDir = null): static
     {
@@ -203,11 +215,10 @@ class Shield implements FirewallInterface
 
     /**
      * Enable SQL injection detection.
-     *
      * @param string[] $skipKeys
-     * @param bool     $scanBody  Scan raw request body.
-     * @param bool     $strict    When true, also blocks standalone DML keywords
-     *                            (SELECT/INSERT/UPDATE/DELETE/DROP).
+     * @param bool $scanBody Scan raw request body.
+     * @param bool $strict When true, also blocks standalone DML keywords (SELECT/INSERT/UPDATE/DELETE/DROP).
+     * @return static
      */
     public function detectSqlInjection(array $skipKeys = [], bool $scanBody = true, bool $strict = true): static
     {
@@ -217,23 +228,23 @@ class Shield implements FirewallInterface
 
     /**
      * Enable XSS detection.
-     *
      * @param string[] $skipKeys
+     * @param bool $scanBody Default is true
+     * @param bool $scanHeaders Default is false
      */
-    public function detectXss(array $skipKeys = [], bool $scanHeaders = false, bool $scanBody = true): static
+    public function detectXss(array $skipKeys = [], bool $scanBody = true, bool $scanHeaders = false): static
     {
-        $this->rules[] = new XssRule($skipKeys, $scanHeaders, $scanBody);
+        $this->rules[] = new XssRule($skipKeys, $scanBody, $scanHeaders);
         return $this;
     }
 
     /**
      * Enable request filtering.
-     *
-     * @param string[]                $blockedMethods
-     * @param string[]                $blockedUriPatterns
-     * @param string[]                $blockedUserAgentPatterns
-     * @param string[]                $requiredHeaders
-     * @param array<string,string[]>  $blockedHeaderValues
+     * @param string[] $blockedMethods
+     * @param string[] $blockedUriPatterns
+     * @param string[] $blockedUserAgentPatterns
+     * @param string[] $requiredHeaders
+     * @param array<string,string[]> $blockedHeaderValues
      */
     public function filterRequests(
         array $blockedMethods = [],

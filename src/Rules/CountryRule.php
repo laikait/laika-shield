@@ -1,4 +1,9 @@
 <?php
+/**
+ * Name: Laika Shield
+ * Provider: Laika IT
+ * Email: strblackhawk@gmail.com
+ */
 
 declare(strict_types=1);
 
@@ -33,7 +38,7 @@ final class CountryRule implements RuleInterface
      * @param bool     $trustProxy  Whether to resolve the real IP from proxy headers.
      */
     public function __construct(
-        private readonly string $dbPath,
+        private readonly string $mmdb,
         private readonly array $blocklist = [],
         private readonly array $allowlist = [],
         private readonly bool $trustProxy = false,
@@ -43,7 +48,7 @@ final class CountryRule implements RuleInterface
 
     public function passes(): bool
     {
-        $detector = new GeoIpDetector($this->dbPath, $this->clientIp);
+        $detector = new GeoIpDetector($this->mmdb, $this->clientIp);
         $country  = $detector->detect();
 
         // Private/loopback IPs won't resolve — let them through

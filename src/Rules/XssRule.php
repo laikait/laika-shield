@@ -1,4 +1,9 @@
 <?php
+/**
+ * Name: Laika Shield
+ * Provider: Laika IT
+ * Email: strblackhawk@gmail.com
+ */
 
 declare(strict_types=1);
 
@@ -27,8 +32,8 @@ final class XssRule implements RuleInterface
      */
     public function __construct(
         private readonly array $skipKeys = [],
-        private readonly bool $scanHeaders = false,
         private readonly bool $scanBody = true,
+        private readonly bool $scanHeaders = false,
     ) {}
 
     public function passes(): bool
