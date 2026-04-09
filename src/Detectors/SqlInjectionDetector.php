@@ -33,7 +33,7 @@ final class SqlInjectionDetector implements DetectorInterface
         // UNION-based injection
         '/(\bunion\b.{0,20}\bselect\b)/i',
         // Comment-based injection: -- or #
-        '/(-{2,}|#)\s*(\w|\s)*$/',
+        '/(\s-{2,}|\s#)\s*(\w|\s)*$/',
         // Stacked queries / multiple statements
         '/;\s*(select|insert|update|delete|drop|alter|create|truncate|exec|execute)/i',
         // Classic always-true tautologies
