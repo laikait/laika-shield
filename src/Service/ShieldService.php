@@ -13,7 +13,7 @@ use Laika\Core\Relay\RelayProvider;
 use Laika\Shield\Shield;
 use Laika\Shield\Config;
 
-class ShieldServices extends RelayProvider
+class ShieldService extends RelayProvider
 {
     public function register(): void
     {
