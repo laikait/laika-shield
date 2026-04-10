@@ -36,5 +36,12 @@
     "prefer-stable": true,
     "config": {
         "sort-packages": true
+    },
+    "extra": {
+        "laika": {
+            "providers": [
+                "Laika\\Shield\\Service\\ShieldService"
+            ]
+        }
     }
 }

@@ -39,7 +39,7 @@ class SqlInjectionDetectorTest extends TestCase
     {
         return [
             'union select'          => ["' UNION SELECT username, password FROM users--"],
-            'comment bypass'        => ["admin'--"],
+            'comment bypass'        => ["admin' --"],
             'stacked query'         => ["1; DROP TABLE users"],
             'tautology'             => ["' OR '1'='1"],
             'sleep blind'           => ["1' AND SLEEP(5)--"],
