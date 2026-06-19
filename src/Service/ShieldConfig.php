@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Laika\Shield\Relay;
+namespace Laika\Shield\Service;
 
 use Laika\Core\Relay\Relay;
 
@@ -18,7 +18,7 @@ use Laika\Core\Relay\Relay;
  * @method static mixed get(?string $key = null)
  * @method static void reset()
  */
-class ShieldConfigRelay extends Relay
+class ShieldConfig extends Relay
 {
     protected static function getRelayAccessor(): string
     {
