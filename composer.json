@@ -39,8 +39,8 @@
     },
     "extra": {
         "laika": {
-            "providers": [
-                "Laika\\Shield\\Service\\ShieldService"
+            "relays": [
+                "Laika\\Shield\\Relay\\ShieldRelay"
             ]
         }
     }
