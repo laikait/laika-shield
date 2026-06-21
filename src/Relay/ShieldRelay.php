@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Relay;
 
-use Laika\Core\Relay\RelayProvider;
 use Laika\Shield\Shield;
 use Laika\Shield\Config;
+use Laika\Relay\RelayProvider;
 
 class ShieldRelay extends RelayProvider
 {
