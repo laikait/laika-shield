@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Service;
 
-use Laika\Core\Relay\Relay;
+use Laika\Relay\Relay;
 
 /**
  * @method static static trustProxy(bool $trust = true)
