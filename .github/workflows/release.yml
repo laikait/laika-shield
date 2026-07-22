@@ -1,28 +1,70 @@
-name: Release
+name: Version Release
 
 on:
   push:
-    branches: [ beta ]
     tags:
       - 'v*.*.*'
 
 jobs:
   release:
-    name: Create Release
+    name: Build & Release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') && contains(github.ref_name, '.') && !contains(github.ref_name, '-')
-
-
     permissions:
       contents: write
+    env:
+      CHANNEL: CLI
+      ARTIFACT: laika-shield-${{ github.ref_name }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      # Prepare Build Artifact
+      - name: Prepare release artifact
+        run: |
+          mkdir build
+          cp -r .github src tests .gitignore composer.json LICENSE README.md .gitignore build/
+          echo "${{ github.run_number }}" > build/VERSION
+          cd build && zip -r ../${{ env.ARTIFACT }}.zip .
+
+      # Generate Checksum
+      - name: Generate artifact checksum
+        run: sha256sum ${{ env.ARTIFACT }}.zip > ${{ env.ARTIFACT }}.zip.sha256
+
+      # Upload Artifact
+      - name: Upload build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ github.ref_name }}
+          name: ${{ env.ARTIFACT }}
+          path: |
+            ${{ env.ARTIFACT }}.zip
+            ${{ env.ARTIFACT }}.zip.sha256
+          retention-days: 30
+
+      # Create GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b
+        with:
+          draft: false
+          overwrite_files: true
           tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
+          name: ${{ github.ref_name }}
+          body: |
+            🚀 **${{ github.ref_name }} Release**
+
+            **Tag:** ${{ github.ref_name }}
+            **Commit:** ${{ github.sha }}
+            **Build #:** ${{ github.run_number }}
+
+            **Artifacts:**
+            - `${{ env.ARTIFACT }}.zip`
+            - `${{ env.ARTIFACT }}.zip.sha256`
+
+            ---
+            ⚙️ Released via CI Pipeline  
+            🧩 Channel: ${{ env.CHANNEL }}
+          files: |
+            ${{ env.ARTIFACT }}.zip
+            ${{ env.ARTIFACT }}.zip.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
