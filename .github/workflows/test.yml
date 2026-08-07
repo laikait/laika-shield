@@ -1,10 +1,12 @@
-name: Tests
+name: Laika Shield Test Suite
 
 on:
   push:
-    branches: [ beta ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - beta
+      - main
+
+  workflow_dispatch:
 
 jobs:
   test:
