@@ -1,4 +1,4 @@
-name: Version Release
+name: Laika Shield Version Release
 
 on:
   push:
