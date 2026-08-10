@@ -2,7 +2,7 @@
 
 **Laika Shield** is a powerful, zero-dependency firewall middleware for the [Laika PHP Framework](https://github.com/laikait/laika-framework).
 
-[![Tests](https://github.com/laikait/laika-shield/actions/workflows/tests.yml/badge.svg)](https://github.com/laikait/laika-shield/actions)
+[![Tests](https://github.com/laikait/laika-shield/actions/workflows/test.yml/badge.svg)](https://github.com/laikait/laika-shield/actions)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://php.net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
