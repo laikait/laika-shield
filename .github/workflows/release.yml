@@ -23,7 +23,7 @@ jobs:
       - name: Prepare release artifact
         run: |
           mkdir build
-          cp -r .github src tests .gitignore composer.json LICENSE README.md .gitignore build/
+          cp -r .github src tests .gitignore composer.json phpcs.xml LICENSE README.md .gitignore build/
           echo "${{ github.run_number }}" > build/VERSION
           cd build && zip -r ../${{ env.ARTIFACT }}.zip .
 
