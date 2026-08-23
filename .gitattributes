@@ -1,0 +1,5 @@
+# Keep development-only files out of composer dist archives
+/tests          export-ignore
+/.github        export-ignore
+/phpunit.xml    export-ignore
+/phpcs.xml      export-ignore

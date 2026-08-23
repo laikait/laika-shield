@@ -19,11 +19,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.3'
+          extensions: json, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          composer install --prefer-dist --no-progress             || composer install --prefer-source --no-progress
+
+      # A tag must never ship without the suite passing first.
+      - name: Run tests
+        run: vendor/bin/phpunit --colors=always
+
+      - name: PHPCompatibility check (8.1-8.5)
+        run: vendor/bin/phpcs --standard=phpcs.xml --report=summary
+
       # Prepare Build Artifact
       - name: Prepare release artifact
         run: |
           mkdir build
-          cp -r .github src tests .gitignore composer.json phpcs.xml LICENSE README.md .gitignore build/
+          cp -r .github src tests composer.json phpunit.xml phpcs.xml LICENSE README.md .gitignore build/
           echo "${{ github.run_number }}" > build/VERSION
           cd build && zip -r ../${{ env.ARTIFACT }}.zip .
 

@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Exceptions;
 
+use Throwable;
+
 /**
  * Class RateLimitExceededException
  *
@@ -21,15 +23,10 @@ class RateLimitExceededException extends FirewallException
     public function __construct(
         string $clientIp = '',
         private readonly int $retryAfter = 60,
-        ?\Throwable $previous = null
+        string $message = 'Too many requests. Please try again later.',
+        ?Throwable $previous = null
     ) {
-        parent::__construct(
-            'Too many requests. Please try again later.',
-            'RateLimitRule',
-            $clientIp,
-            429,
-            $previous
-        );
+        parent::__construct($message, $clientIp, 429, $previous);
     }
 
     /**
@@ -38,5 +35,14 @@ class RateLimitExceededException extends FirewallException
     public function getRetryAfter(): int
     {
         return $this->retryAfter;
+    }
+
+    /**
+     * @inheritDoc
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return parent::toArray() + ['retry_after' => $this->retryAfter];
     }
 }

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
+use Laika\Shield\Contract\RuleInterface;
 use Laika\Shield\Support\IpHelper;
 
 /**
@@ -30,12 +30,14 @@ final class IpVersionRule implements RuleInterface
      * @param int|null $allowedVersion  Pass 4 to allow only IPv4, 6 to allow only IPv6,
      *                                  or null to allow both (rule is effectively a no-op).
      * @param bool     $trustProxy      Whether to resolve the client IP from proxy headers.
+     * @param string[] $trustedProxies IPs/CIDRs of your own reverse proxies.
      */
     public function __construct(
         private readonly int|null $allowedVersion = null,
         private readonly bool $trustProxy = false,
+        private readonly array $trustedProxies = [],
     ) {
-        $this->clientIp = IpHelper::resolve($this->trustProxy);
+        $this->clientIp = IpHelper::resolve($this->trustProxy, $this->trustedProxies);
     }
 
     public function passes(): bool
@@ -82,13 +84,5 @@ final class IpVersionRule implements RuleInterface
     public function additionalHeader(): void
     {
         return;
-    }
-
-    /**
-     * Return the detected IP version of the current client (4, 6, or null if invalid).
-     */
-    public function detectedVersion(): int|null
-    {
-        return IpHelper::version($this->clientIp);
     }
 }

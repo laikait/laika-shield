@@ -19,6 +19,16 @@ namespace Laika\Shield\Support;
 final class RequestHelper
 {
     /**
+     * Largest raw body Shield will pull into memory for scanning. A request
+     * bigger than this is not scanned as a raw body — cap it with the
+     * request.filter content.length.max rule instead of buffering it here.
+     */
+    public const MAX_SCAN_BYTES = 262144;
+
+    /** @var array<string,string>|null Per-request memo for allInput(). */
+    private static ?array $inputCache = null;
+
+    /**
      * Return all query-string parameters as a flat key=>value array.
      *
      * @return array<string, string>
@@ -39,11 +49,21 @@ final class RequestHelper
     }
 
     /**
-     * Return raw PHP input body (e.g. JSON, XML).
+     * Return raw PHP input body (e.g. JSON, XML), truncated to MAX_SCAN_BYTES.
      */
     public static function rawBody(): string
     {
-        return (string) file_get_contents('php://input');
+        $stream = fopen('php://input', 'rb');
+
+        if ($stream === false) {
+            return '';
+        }
+
+        try {
+            return (string) stream_get_contents($stream, self::MAX_SCAN_BYTES);
+        } finally {
+            fclose($stream);
+        }
     }
 
     /**
@@ -96,6 +116,12 @@ final class RequestHelper
      */
     public static function allInput(): array
     {
+        // Memoised: every scanning rule calls this, and re-reading plus
+        // re-flattening the whole body once per rule is pure waste.
+        if (self::$inputCache !== null) {
+            return self::$inputCache;
+        }
+
         $inputs = array_merge(
             self::queryParams(),
             self::bodyParams(),
@@ -119,7 +145,16 @@ final class RequestHelper
             }
         }
 
-        return $inputs;
+        return self::$inputCache = $inputs;
+    }
+
+    /**
+     * Clear the memoised input. Only needed in tests, where several requests
+     * are simulated inside one process.
+     */
+    public static function flush(): void
+    {
+        self::$inputCache = null;
     }
 
     // -------------------------------------------------------------------------
