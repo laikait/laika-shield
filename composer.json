@@ -63,7 +63,7 @@
                 "pipelines": {
                     "path": "src/Pipeline",
                     "namespace": "Laika\\Shield\\Pipeline",
-                    "contract": "Laika\\Route\\Interfaces\\PipelineInterface"
+                    "contract": "Laika\\Route\\Contracts\\PipelineInterface"
                 }
             }
         }
