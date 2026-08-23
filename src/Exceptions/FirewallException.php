@@ -10,11 +10,15 @@ declare(strict_types=1);
 namespace Laika\Shield\Exceptions;
 
 use RuntimeException;
+use Throwable;
 
 /**
  * Class FirewallException
  *
  * Thrown when the firewall blocks a request.
+ *
+ * {@see getMessage()} stays human-readable. Use {@see payload()} when you need the
+ * JSON body for the block response — do not parse getMessage().
  *
  * @package Laika\Shield\Exceptions
  */
@@ -22,27 +26,34 @@ class FirewallException extends RuntimeException
 {
     public function __construct(
         string $message = 'Request blocked by Laika Shield.',
-        private readonly string $rule = 'Unknown',
         private readonly string $clientIp = '',
         int $code = 403,
-        ?\Throwable $previous = null
+        ?Throwable $previous = null
     ) {
         parent::__construct($message, $code, $previous);
     }
 
     /**
-     * The name of the rule that triggered the block.
+     * The block response as a JSON string.
+     *
+     * @return string
      */
-    public function getRule(): string
+    public function payload(): string
     {
-        return $this->rule;
+        return (string) json_encode($this->toArray(), JSON_UNESCAPED_SLASHES);
     }
 
     /**
-     * The IP address of the blocked client.
+     * The block response as a structured array.
+     *
+     * @return array<string,mixed>
      */
-    public function getClientIp(): string
+    public function toArray(): array
     {
-        return $this->clientIp;
+        return [
+            'status'  => $this->getCode(),
+            'message' => $this->getMessage(),
+            'ip'      => $this->clientIp,
+        ];
     }
 }

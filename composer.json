@@ -1,13 +1,13 @@
 {
     "name": "laikait/laika-shield",
-    "description": "A powerful firewall middleware package for the Laika PHP Framework — IP filtering, rate limiting, SQL injection & XSS detection, and request filtering.",
-    "type": "package",
+    "description": "A powerful firewall package for the Laika PHP Framework - IP filtering, rate limiting, SQL injection & XSS detection, and request filtering.",
+    "type": "library",
     "license": "MIT",
     "keywords": [
         "laika",
         "firewall",
         "security",
-        "middleware",
+        "pipeline",
         "ip-blocking",
         "rate-limiting",
         "sql-injection",
@@ -42,7 +42,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Laika\\Shield\\Tests\\": "tests/"
+            "Laika\\Shield\\Tests\\": "tests/",
+            "Laika\\Route\\": "tests/Stubs/Laika/Route/"
         }
     },
     "minimum-stability": "stable",
@@ -57,7 +58,14 @@
         "laika": {
             "relays": [
                 "Laika\\Shield\\Relay\\ShieldRelay"
-            ]
+            ],
+            "resources": {
+                "pipelines": {
+                    "path": "src/Pipeline",
+                    "namespace": "Laika\\Shield\\Pipeline",
+                    "contract": "Laika\\Route\\Interfaces\\PipelineInterface"
+                }
+            }
         }
     },
     "scripts": {

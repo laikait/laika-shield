@@ -15,8 +15,13 @@ namespace Laika\Shield\Support;
  * A simple file-based rate limiter. Stores hit counts and windows in
  * PHP's system temp directory — no Redis or database required.
  *
- * For high-traffic production use, swap the storage backend by extending
- * this class and overriding {@see get()} and {@see put()}.
+ * The whole read-modify-write is held under a single exclusive lock. Locking only
+ * the write is not enough: concurrent requests read the same count and overwrite
+ * each other, undercounting during exactly the burst the limit exists to stop.
+ *
+ * For a high-traffic multi-server deployment, extend this class and override
+ * {@see tooMany()} with an atomic backend (Redis INCR, etc.) — a shared filesystem
+ * is not a good lock substrate.
  *
  * @package Laika\Shield\Support
  */
@@ -26,10 +31,14 @@ class RateLimiter
 
     public function __construct(?string $storageDir = null)
     {
-        $this->storageDir = rtrim($storageDir ?? sys_get_temp_dir(), '/') . '/laika_shield_rl';
+        $base = $storageDir ?? sys_get_temp_dir();
+
+        $this->storageDir = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', $base), '/') . '/laika_shield_rl';
 
         if (!is_dir($this->storageDir)) {
-            mkdir($this->storageDir, 0700, true);
+            // Concurrent requests race here; recursive mkdir failing because
+            // someone else won is not an error.
+            @mkdir($this->storageDir, 0700, true);
         }
     }
 
@@ -43,21 +52,39 @@ class RateLimiter
      */
     public function tooMany(string $key, int $maxHits, int $windowSecs): bool
     {
-        $now  = time();
-        $data = $this->get($key);
+        $now    = time();
+        $handle = @fopen($this->path($key), 'c+');
 
-        // Reset window if expired
-        if ($data === null || $now >= $data['expires_at']) {
-            $data = [
-                'hits'       => 0,
-                'expires_at' => $now + $windowSecs,
-            ];
+        if ($handle === false) {
+            // Storage unavailable. Fail open rather than locking every client out
+            // of the application because the temp directory is unwritable.
+            return false;
         }
 
-        $data['hits']++;
-        $this->put($key, $data);
+        try {
+            if (!flock($handle, LOCK_EX)) {
+                return false;
+            }
 
-        return $data['hits'] > $maxHits;
+            $data = $this->readLocked($handle);
+
+            // Reset the window if it expired or the file was empty/corrupt.
+            if ($data === null || $now >= $data['expires_at']) {
+                $data = [
+                    'hits'       => 0,
+                    'expires_at' => $now + $windowSecs,
+                ];
+            }
+
+            $data['hits']++;
+
+            $this->writeLocked($handle, $data);
+
+            return $data['hits'] > $maxHits;
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     /**
@@ -80,8 +107,9 @@ class RateLimiter
     public function reset(string $key): void
     {
         $path = $this->path($key);
+
         if (file_exists($path)) {
-            unlink($path);
+            @unlink($path);
         }
     }
 
@@ -90,6 +118,9 @@ class RateLimiter
     // -------------------------------------------------------------------------
 
     /**
+     * Read the current window without taking a lock. Safe for reporting
+     * (retryAfter) but never for the increment path.
+     *
      * @return array{hits: int, expires_at: int}|null
      */
     protected function get(string $key): ?array
@@ -100,28 +131,67 @@ class RateLimiter
             return null;
         }
 
-        $raw = file_get_contents($path);
+        $raw = @file_get_contents($path);
 
-        if ($raw === false) {
-            return null;
-        }
-
-        $data = json_decode($raw, true);
-
-        return is_array($data) ? $data : null;
-    }
-
-    /**
-     * @param array{hits: int, expires_at: int} $data
-     */
-    protected function put(string $key, array $data): void
-    {
-        file_put_contents($this->path($key), json_encode($data), LOCK_EX);
+        return $raw === false ? null : $this->decode($raw);
     }
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * @param resource $handle
+     * @return array{hits: int, expires_at: int}|null
+     */
+    private function readLocked($handle): ?array
+    {
+        rewind($handle);
+
+        $raw  = '';
+        $size = (int) (fstat($handle)['size'] ?? 0);
+
+        if ($size > 0) {
+            $raw = (string) fread($handle, $size);
+        }
+
+        return $this->decode($raw);
+    }
+
+    /**
+     * @param resource $handle
+     * @param array{hits: int, expires_at: int} $data
+     */
+    private function writeLocked($handle, array $data): void
+    {
+        $encoded = (string) json_encode($data);
+
+        rewind($handle);
+        ftruncate($handle, 0);
+        fwrite($handle, $encoded);
+        fflush($handle);
+    }
+
+    /**
+     * @return array{hits: int, expires_at: int}|null
+     */
+    private function decode(string $raw): ?array
+    {
+        if ($raw === '') {
+            return null;
+        }
+
+        $data = json_decode($raw, true);
+
+        if (!is_array($data) || !isset($data['hits'], $data['expires_at'])) {
+            return null;
+        }
+
+        return [
+            'hits'       => (int) $data['hits'],
+            'expires_at' => (int) $data['expires_at'],
+        ];
+    }
 
     private function path(string $key): string
     {

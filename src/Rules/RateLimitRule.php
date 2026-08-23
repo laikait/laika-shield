@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
+use Laika\Shield\Contract\RuleInterface;
 use Laika\Shield\Support\IpHelper;
 use Laika\Shield\Support\RateLimiter;
 
@@ -33,6 +33,7 @@ final class RateLimitRule implements RuleInterface
      * @param bool        $trustProxy  Whether to resolve the client IP from proxy headers.
      * @param string|null $storageDir  Directory for rate-limit files. Defaults to sys_get_temp_dir().
      * @param string      $keyPrefix   Prefix for rate-limit storage keys.
+     * @param string[] $trustedProxies IPs/CIDRs of your own reverse proxies.
      */
     public function __construct(
         private readonly int $maxHits = 60,
@@ -40,8 +41,9 @@ final class RateLimitRule implements RuleInterface
         private readonly bool $trustProxy = false,
         private readonly ?string $storageDir = null,
         private readonly string $keyPrefix = 'rl_',
+        private readonly array $trustedProxies = [],
     ) {
-        $this->clientIp = IpHelper::resolve($this->trustProxy);
+        $this->clientIp = IpHelper::resolve($this->trustProxy, $this->trustedProxies);
     }
 
     public function passes(): bool
@@ -82,8 +84,8 @@ final class RateLimitRule implements RuleInterface
      */
     public function additionalHeader(): void
     {
-        header('Retry-After: 60');
-        return;
+        // Only meaningful after passes() has run and populated retryAfter.
+        header('Retry-After: ' . max(1, $this->retryAfter));
     }
 
     /**

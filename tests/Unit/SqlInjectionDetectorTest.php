@@ -60,7 +60,70 @@ class SqlInjectionDetectorTest extends TestCase
             'number'            => ["42"],
             'url'               => ["https://example.com/page?id=5"],
             'sentence'          => ["I want to select the best option for my project."],
+
+            // Every one of these was a 403 before the patterns were anchored to
+            // SQL syntax instead of SQL vocabulary.
+            'select from prose'  => ["Please select an item from the dropdown"],
+            'the word sleep'     => ["I could not sleep last night"],
+            'issue reference'    => ["See ticket #42 for details"],
+            'dashes in prose'    => ["Delete this row from the sheet -- thanks"],
+            'char with one arg'  => ["char(1) is a C type"],
+            'apostrophe and eq'  => ["O'Brien and Sons = great"],
+            'update and set'     => ["update your profile and set a new photo"],
+            'path with comment'  => ["https://ex.com/a/*b*/c"],
+            'drop table prose'   => ["We will drop table service after the update"],
+            'insert into prose'  => ["Insert into the field the value you want"],
+            'ampersand dashes'   => ["Rock & Roll -- the best genre"],
+            'windows path'       => ["C:/Users/me/notes.txt"],
+            'comparison prose'   => ["price > 100 and rating > 4"],
+            'sleep exclamation'  => ["Sleep well!"],
         ];
+    }
+
+    /**
+     * @dataProvider obfuscatedPayloads
+     */
+    public function testDetectsObfuscatedPayloads(string $payload): void
+    {
+        $this->assertTrue($this->detector->detect($payload), "Expected detection for: {$payload}");
+    }
+
+    public static function obfuscatedPayloads(): array
+    {
+        return [
+            'mysql executable comment' => ["1' OR 1=1 /*!50000UNION*/ SELECT 1"],
+            'inline comment spacing'   => ["admin'/**/OR/**/1=1#"],
+            'long hex payload'         => ["0x27206f7220313d31202d2d20"],
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // strict mode
+    // -------------------------------------------------------------------------
+
+    /**
+     * The strict flag used to be passed to a class with no constructor, so PHP
+     * discarded it silently and the option did nothing.
+     */
+    public function testStrictFlagIsActuallyApplied(): void
+    {
+        $lenient = new SqlInjectionDetector(false);
+        $strict  = new SqlInjectionDetector(true);
+
+        $this->assertFalse($lenient->detect('SELECT name FROM users'));
+        $this->assertTrue($strict->detect('SELECT name FROM users'));
+    }
+
+    public function testStrictModeStillCatchesSyntaxPayloads(): void
+    {
+        $strict = new SqlInjectionDetector(true);
+
+        $this->assertTrue($strict->detect("' OR '1'='1"));
+    }
+
+    public function testDefaultIsLenient(): void
+    {
+        $this->assertFalse((new SqlInjectionDetector())->detect('DROP TABLE accounts'));
     }
 
     public function testHasCorrectName(): void

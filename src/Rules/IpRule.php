@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
+use Laika\Shield\Contract\RuleInterface;
 use Laika\Shield\Support\IpHelper;
 
 /**
@@ -34,13 +34,15 @@ final class IpRule implements RuleInterface
      * @param string[] $blocklist   IPs or CIDR ranges to block.
      * @param string[] $allowlist   When non-empty, ONLY these IPs/ranges are allowed.
      * @param bool     $trustProxy  Whether to resolve the client IP from proxy headers.
+     * @param string[] $trustedProxies IPs/CIDRs of your own reverse proxies.
      */
     public function __construct(
         private readonly array $blocklist = [],
         private readonly array $allowlist = [],
         private readonly bool $trustProxy = false,
+        private readonly array $trustedProxies = [],
     ) {
-        $this->clientIp = IpHelper::resolve($this->trustProxy);
+        $this->clientIp = IpHelper::resolve($this->trustProxy, $this->trustedProxies);
     }
 
     /**
@@ -95,14 +97,5 @@ final class IpRule implements RuleInterface
     public function additionalHeader(): void
     {
         return;
-    }
-
-    /**
-     * Return The Resolved Client IP.
-     * @return string
-     */
-    public function clientIp(): string
-    {
-        return $this->clientIp;
     }
 }

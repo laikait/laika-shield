@@ -7,14 +7,14 @@
 
 declare(strict_types=1);
 
-namespace Laika\Shield\Interfaces;
+namespace Laika\Shield\Contract;
 
 /**
  * Interface RuleInterface
  *
  * Every firewall rule must implement this contract.
  *
- * @package Laika\Shield\Interfaces
+ * @package Laika\Shield\Contract
  */
 interface RuleInterface
 {

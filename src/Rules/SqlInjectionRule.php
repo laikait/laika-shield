@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
-use Laika\Shield\Detectors\SqlInjectionDetector;
 use Laika\Shield\Support\RequestHelper;
+use Laika\Shield\Contract\RuleInterface;
+use Laika\Shield\Detectors\SqlInjectionDetector;
 
 /**
  * Class SqlInjectionRule

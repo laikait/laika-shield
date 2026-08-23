@@ -59,6 +59,38 @@ class XssDetectorTest extends TestCase
             'email'             => ['user@example.com'],
             'url safe'          => ['https://example.com/search?q=hello+world'],
             'number string'     => ['123456'],
+
+            // /on\w+\s*=/ matched all of these before the handler patterns
+            // were anchored to markup context.
+            'param online'      => ['online=1'],
+            'param once'        => ['once=true'],
+            'param ondemand'    => ['ondemand=yes'],
+            'ampersand'         => ['The R&D team'],
+            'plus in equation'  => ['a+b=c'],
+            'svg mentioned'     => ['I bought an SVG logo'],
+            'inert svg markup'  => ['<svg width="10" height="10"><circle cx="5" cy="5" r="4"/></svg>'],
+            'time of day'       => ['Meet me at 5:30 tomorrow'],
+            'ratio'             => ['ratio is 3:2'],
+            'windows path'      => ['C:/Users/me/notes.txt'],
+        ];
+    }
+
+    /**
+     * @dataProvider additionalPayloads
+     */
+    public function testDetectsAdditionalPayloads(string $payload): void
+    {
+        $this->assertTrue($this->detector->detect($payload), "Expected XSS detection for: {$payload}");
+    }
+
+    public static function additionalPayloads(): array
+    {
+        return [
+            'iframe srcdoc'   => ['<iframe srcdoc="<script>alert(1)</script>">'],
+            'object data'     => ['<object data="evil.swf">'],
+            'svg with script' => ['<svg><script>alert(1)</script></svg>'],
+            'double encoded'  => ['%253Cscript%253E'],
+            'base tag'        => ['<base href="http://evil.com/">'],
         ];
     }
 

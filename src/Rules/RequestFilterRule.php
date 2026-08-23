@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
+use Laika\Shield\Contract\RuleInterface;
 use Laika\Shield\Support\RequestHelper;
 
 /**
@@ -54,7 +54,9 @@ final class RequestFilterRule implements RuleInterface
     {
         // --- Method check ---
         $method = RequestHelper::method();
-        if (!empty($this->blockedMethods) && in_array($method, $this->blockedMethods, true)) {
+        $blockedMethods = array_map('strtoupper', $this->blockedMethods);
+
+        if (!empty($blockedMethods) && in_array($method, $blockedMethods, true)) {
             $this->blockMessage = "HTTP Method [{$method}] Is Not Allowed.";
             $this->statusCode = 403;
             return false;
@@ -109,16 +111,16 @@ final class RequestFilterRule implements RuleInterface
             ? (int) $headers['content-length']
             : null;
 
-        if ($this->maxContentLength !== null) {
-            if ($contentLength > $this->maxContentLength) {
+        // A request with no Content-Length (every GET) has no body to measure.
+        // Comparing null against the bounds coerces to 0 and blocked all of them.
+        if ($contentLength !== null) {
+            if ($this->maxContentLength !== null && $contentLength > $this->maxContentLength) {
                 $this->blockMessage = "Request Body Is Too Large ([{$contentLength}] Bytes, Max {$this->maxContentLength}).";
-                $this->statusCode = 403;
+                $this->statusCode = 413;
                 return false;
             }
-        }
 
-        if ($this->minContentLength !== null) {
-            if ($contentLength < $this->minContentLength) {
+            if ($this->minContentLength !== null && $contentLength < $this->minContentLength) {
                 $this->blockMessage = "Request Body Is Too Small ([{$contentLength}] Bytes, Min {$this->minContentLength}).";
                 $this->statusCode = 403;
                 return false;

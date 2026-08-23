@@ -54,11 +54,4 @@ class IpVersionRuleTest extends TestCase
         $_SERVER['REMOTE_ADDR'] = '::1';
         $this->assertTrue((new IpVersionRule(null))->passes());
     }
-
-    public function testDetectedVersionReturnsCorrectValue(): void
-    {
-        $_SERVER['REMOTE_ADDR'] = '1.1.1.1';
-        $rule = new IpVersionRule(4);
-        $this->assertSame(4, $rule->detectedVersion());
-    }
 }

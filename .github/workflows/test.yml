@@ -6,6 +6,12 @@ on:
       - beta
       - main
 
+  # Without this, beta -> main pull requests merge without ever running the suite.
+  pull_request:
+    branches:
+      - beta
+      - main
+
   workflow_dispatch:
 
 jobs:

@@ -13,10 +13,18 @@ use Laika\Relay\Relay;
 
 /**
  * @method static void add(string $key, mixed $subKeyOrValue, mixed $value = null)
- * @method static void has(string $key)
+ * @method static bool has(string $key)
  * @method static array keys()
  * @method static mixed get(?string $key = null)
  * @method static void reset()
+ * @method static \Laika\Shield\Config instance()
+ * @method static \Laika\Shield\Config\IpConfig ip()
+ * @method static \Laika\Shield\Config\RateLimitConfig rateLimit()
+ * @method static \Laika\Shield\Config\SqlInjectionConfig sqlInjection()
+ * @method static \Laika\Shield\Config\XssConfig xss()
+ * @method static \Laika\Shield\Config\RequestFilterConfig requestFilter()
+ * @method static \Laika\Shield\Config\CountryConfig country()
+ * @method static \Laika\Shield\Config make()
  */
 class ShieldConfig extends Relay
 {

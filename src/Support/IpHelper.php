@@ -79,14 +79,22 @@ final class IpHelper
         }
 
         [$subnet, $prefix] = explode('/', $cidr, 2);
+
+        // An out-of-range prefix used to reach a negative bit shift, which is a
+        // fatal ArithmeticError in PHP 8 — one typo in a blocklist took down every
+        // request. Reject the range instead.
+        if ($prefix === '' || !ctype_digit($prefix)) {
+            return false;
+        }
+
         $prefix = (int) $prefix;
 
         if (self::isV4($ip) && self::isV4($subnet)) {
-            return self::inCidrV4($ip, $subnet, $prefix);
+            return $prefix <= 32 && self::inCidrV4($ip, $subnet, $prefix);
         }
 
         if (self::isV6($ip) && self::isV6($subnet)) {
-            return self::inCidrV6($ip, $subnet, $prefix);
+            return $prefix <= 128 && self::inCidrV6($ip, $subnet, $prefix);
         }
 
         return false;
@@ -147,38 +155,86 @@ final class IpHelper
     // -------------------------------------------------------------------------
 
     /**
-     * Resolve the real client IP from superglobals, respecting common
-     * proxy / load-balancer headers when $trustProxy is true.
+     * Resolve the real client IP.
+     *
+     * Forwarded headers are attacker-controlled unless a trusted proxy put them
+     * there, so they are only consulted when $trustProxy is on, and single-value
+     * headers (CF-Connecting-IP, X-Real-IP) are only believed when the immediate
+     * peer is inside $trustedProxies.
+     *
+     * X-Forwarded-For is appended left-to-right, so the LEFTMOST entry is the one
+     * the client fully controls and the rightmost is the one our own proxy wrote.
+     * We therefore walk from the right, discarding hops we trust, and take the
+     * first address we did not put there ourselves.
+     *
+     * @param bool     $trustProxy      Whether to consult proxy headers at all.
+     * @param string[] $trustedProxies  IPs/CIDRs of your own proxies. Strongly
+     *                                  recommended: without it the single-value
+     *                                  headers are ignored entirely.
+     * @return string
      */
-    public static function resolve(bool $trustProxy = false): string
+    public static function resolve(bool $trustProxy = false, array $trustedProxies = []): string
     {
-        if ($trustProxy) {
-            $headers = [
-                'HTTP_CF_CONNECTING_IP',   // Cloudflare
-                'HTTP_X_REAL_IP',          // Nginx proxy
-                'HTTP_X_FORWARDED_FOR',    // Standard proxy header
-                'HTTP_X_FORWARDED',
-                'HTTP_FORWARDED_FOR',
-                'HTTP_FORWARDED',
-                'HTTP_CLIENT_IP',
-            ];
+        $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
-            foreach ($headers as $header) {
-                $value = $_SERVER[$header] ?? '';
-                if ($value === '') {
-                    continue;
-                }
+        if (!$trustProxy) {
+            return $remote;
+        }
 
-                // X-Forwarded-For may contain a comma-separated list
-                $ip = trim(explode(',', $value)[0]);
+        $peerIsTrusted = !empty($trustedProxies) && self::inAnyCidr($remote, $trustedProxies);
 
-                if (self::isValid($ip)) {
-                    return $ip;
+        // Headers a proxy sets wholesale. A direct client can send these too, so
+        // they are only trustworthy when we know the peer is our proxy.
+        if ($peerIsTrusted) {
+            foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP'] as $header) {
+                $value = trim((string) ($_SERVER[$header] ?? ''));
+
+                if ($value !== '' && self::isValid($value)) {
+                    return $value;
                 }
             }
         }
 
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $forwarded = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+
+        if ($forwarded !== '') {
+            $hops = array_values(array_filter(array_map('trim', explode(',', $forwarded))));
+
+            // Right-to-left: skip our own proxies, stop at the first hop we did not add.
+            for ($i = count($hops) - 1; $i >= 0; $i--) {
+                $hop = self::normalise($hops[$i]);
+
+                if (!self::isValid($hop)) {
+                    break;
+                }
+
+                if (!empty($trustedProxies) && self::inAnyCidr($hop, $trustedProxies)) {
+                    continue;
+                }
+
+                return $hop;
+            }
+        }
+
+        return $remote;
+    }
+
+    /**
+     * Strip a port and IPv6 brackets from a forwarded-header hop.
+     */
+    private static function normalise(string $hop): string
+    {
+        if (str_starts_with($hop, '[')) {
+            $end = strpos($hop, ']');
+            return $end !== false ? substr($hop, 1, $end - 1) : $hop;
+        }
+
+        // "1.2.3.4:5678" — only strip when it is unambiguously a v4 host:port pair.
+        if (substr_count($hop, ':') === 1) {
+            return explode(':', $hop, 2)[0];
+        }
+
+        return $hop;
     }
 
     // -------------------------------------------------------------------------

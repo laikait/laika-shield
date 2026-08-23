@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
+use Laika\Shield\Contract\RuleInterface;
 use Laika\Shield\Detectors\XssDetector;
 use Laika\Shield\Support\RequestHelper;
 
@@ -27,8 +27,8 @@ final class XssRule implements RuleInterface
 
     /**
      * @param string[] $skipKeys      Input keys to skip (e.g. ['content', 'html_body']).
-     * @param bool     $scanHeaders   Whether to also scan request headers.
      * @param bool     $scanBody      Whether to also scan the raw request body.
+     * @param bool     $scanHeaders   Whether to also scan request headers.
      */
     public function __construct(
         private readonly array $skipKeys = [],

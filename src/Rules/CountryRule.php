@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Rules;
 
-use Laika\Shield\Interfaces\RuleInterface;
+use Laika\Shield\Contract\RuleInterface;
 use Laika\Shield\Detectors\GeoIpDetector;
 use Laika\Shield\Support\IpHelper;
 
@@ -32,26 +32,30 @@ final class CountryRule implements RuleInterface
     private string $clientIp;
 
     /**
-     * @param string   $dbPath      Absolute path to GeoLite2-Country.mmdb.
+     * @param string   $mmdb      Absolute path to GeoLite2-Country.mmdb.
      * @param string[] $blocklist   ISO country codes to block.
      * @param string[] $allowlist   When non-empty, ONLY these countries are allowed.
      * @param bool     $trustProxy  Whether to resolve the real IP from proxy headers.
+     * @param string[] $trustedProxies IPs/CIDRs of your own reverse proxies.
      */
     public function __construct(
         private readonly string $mmdb,
         private readonly array $blocklist = [],
         private readonly array $allowlist = [],
         private readonly bool $trustProxy = false,
+        private readonly array $trustedProxies = [],
     ) {
-        $this->clientIp = IpHelper::resolve($this->trustProxy);
+        $this->clientIp = IpHelper::resolve($this->trustProxy, $this->trustedProxies);
     }
 
     public function passes(): bool
     {
-        $detector = new GeoIpDetector($this->mmdb, $this->clientIp);
-        $country  = $detector->detect();
+        $detector = new GeoIpDetector($this->mmdb);
+        $country  = $detector->detect($this->clientIp);
 
-        // Private/loopback IPs won't resolve — let them through
+        // Private/loopback IPs won't resolve, and an unreadable database cannot
+        // classify anyone — either way there is no country to judge, so let the
+        // request through rather than locking out every visitor.
         if ($country === null) {
             return true;
         }
@@ -62,7 +66,7 @@ final class CountryRule implements RuleInterface
         if (!empty($this->allowlist)) {
             $allowlist = array_map('strtoupper', $this->allowlist);
             if (!in_array($country, $allowlist, true)) {
-                $this->blockMessage = "Access From Country [{$detector->name()}] Is Not Allowed.";
+                $this->blockMessage = "Access From Country [{$detector->countryName($this->clientIp)}] Is Not Allowed.";
                 return false;
             }
         }
@@ -71,7 +75,7 @@ final class CountryRule implements RuleInterface
         if (!empty($this->blocklist)) {
             $blocklist = array_map('strtoupper', $this->blocklist);
             if (in_array($country, $blocklist, true)) {
-                $this->blockMessage = "Access From Country [{$detector->name()}] Is Blocked.";
+                $this->blockMessage = "Access From Country [{$detector->countryName($this->clientIp)}] Is Blocked.";
                 return false;
             }
         }
