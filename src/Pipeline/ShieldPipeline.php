@@ -12,11 +12,11 @@ namespace Laika\Shield\Pipeline;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use Laika\Route\Interfaces\PipelineInterface;
-use Laika\Shield\Exceptions\FirewallException;
-use Laika\Shield\Exceptions\RateLimitExceededException;
 use Laika\Shield\Config;
 use Laika\Shield\Shield;
+use Laika\Route\Contracts\PipelineInterface;
+use Laika\Shield\Exceptions\FirewallException;
+use Laika\Shield\Exceptions\RateLimitExceededException;
 
 /**
  * Class ShieldPipeline

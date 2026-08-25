@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Route\Interfaces\PipelineInterface;
+use Laika\Route\Contracts\PipelineInterface;
 use Laika\Shield\Config;
 use Laika\Shield\Exceptions\FirewallException;
 use Laika\Shield\Exceptions\RateLimitExceededException;
