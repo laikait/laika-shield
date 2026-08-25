@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Laika\Route\Interfaces;
+namespace Laika\Route\Contracts;
 
 /**
  * Test stub for the laika-framework pipeline contract.
@@ -15,6 +15,11 @@ namespace Laika\Route\Interfaces;
  * This stub exists only under autoload-dev so those classes can load. It must stay
  * signature-identical to the framework's interface; ShieldPipelineTest asserts the
  * shape by reflection so drift is caught here rather than in production.
+ *
+ * Its NAMESPACE has to track the framework too, not just the signature. When the
+ * real interface moved from Laika\Route\Interfaces to Laika\Route\Contracts and this
+ * file did not follow, every test touching ShieldPipeline died with
+ * "Interface ... not found" -- the class could not be autoloaded at all.
  */
 interface PipelineInterface
 {
