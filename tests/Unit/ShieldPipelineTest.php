@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Laika\Shield\Tests\Unit;
 
 use Laika\Route\Contracts\PipelineInterface;
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Exceptions\FirewallException;
 use Laika\Shield\Exceptions\RateLimitExceededException;
 use Laika\Shield\Pipeline\ShieldPipeline;
@@ -28,9 +28,9 @@ class ShieldPipelineTest extends TestCase
         // system temp dir across suite runs, and the suite starts 429ing itself.
         $this->storageDir = sys_get_temp_dir() . '/laika_shield_test_' . uniqid();
 
-        // Passing an array to the pipeline fills the SHARED Config instance, so
+        // Passing an array to the pipeline fills the SHARED ShieldConfig instance, so
         // without this one test's blocklist survives into the next.
-        Config::reset();
+        ShieldConfig::reset();
 
         $_SERVER['REMOTE_ADDR']    = '1.2.3.4';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -46,7 +46,7 @@ class ShieldPipelineTest extends TestCase
     {
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
         $this->rmdir($this->storageDir);
-        Config::reset();
+        ShieldConfig::reset();
     }
 
     /**

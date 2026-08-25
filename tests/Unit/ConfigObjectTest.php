@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Config\CountryConfig;
 use Laika\Shield\Config\IpConfig;
 use Laika\Shield\Config\RateLimitConfig;
@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The object configuration API.
  *
- * @covers \Laika\Shield\Config
+ * @covers \Laika\Shield\ShieldConfig
  * @covers \Laika\Shield\Config\SectionConfig
  */
 class ConfigObjectTest extends TestCase
@@ -26,25 +26,25 @@ class ConfigObjectTest extends TestCase
     // -------------------------------------------------------------------------
 
     /**
-     * Config advertises singleton semantics (instance/reset), so the constructor
+     * ShieldConfig advertises singleton semantics (instance/reset), so the constructor
      * must not be public. A public one let callers build a detached config that
      * Shield::boot() could never see, which silently did nothing.
      */
     public function testConstructorIsNotPublic(): void
     {
-        $constructor = (new \ReflectionClass(Config::class))->getConstructor();
+        $constructor = (new \ReflectionClass(ShieldConfig::class))->getConstructor();
 
         $this->assertNotNull($constructor);
-        $this->assertFalse($constructor->isPublic(), 'Config::__construct() must not be public.');
+        $this->assertFalse($constructor->isPublic(), 'ShieldConfig::__construct() must not be public.');
     }
 
     public function testInstanceReturnsTheSameObjectEveryTime(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
 
-        $this->assertSame(Config::instance(), Config::instance());
+        $this->assertSame(ShieldConfig::instance(), ShieldConfig::instance());
 
-        Config::reset();
+        ShieldConfig::reset();
     }
 
     /**
@@ -52,16 +52,16 @@ class ConfigObjectTest extends TestCase
      */
     public function testMakeReturnsADetachedInstance(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
 
-        $detached = Config::make();
+        $detached = ShieldConfig::make();
 
-        $this->assertNotSame($detached, Config::instance());
+        $this->assertNotSame($detached, ShieldConfig::instance());
 
         $detached->rateLimit->maxHits(1);
-        $this->assertSame(60, Config::instance()->rateLimit->maxHits());
+        $this->assertSame(60, ShieldConfig::instance()->rateLimit->maxHits());
 
-        Config::reset();
+        ShieldConfig::reset();
     }
 
     // -------------------------------------------------------------------------
@@ -70,7 +70,7 @@ class ConfigObjectTest extends TestCase
 
     public function testNewConfigIsAlreadyComplete(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $this->assertFalse($config->trustProxy());
         $this->assertSame([], $config->trustedProxies());
@@ -86,7 +86,7 @@ class ConfigObjectTest extends TestCase
 
     public function testSectionDefaults(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $this->assertSame([], $config->ip->blocklist());
         $this->assertSame(60, $config->rateLimit->maxHits());
@@ -105,7 +105,7 @@ class ConfigObjectTest extends TestCase
      */
     public function testStrictSqlMatchingIsOffByDefault(): void
     {
-        $this->assertFalse((Config::make())->sqlInjection->strict());
+        $this->assertFalse((ShieldConfig::make())->sqlInjection->strict());
     }
 
     // -------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class ConfigObjectTest extends TestCase
 
     public function testAccessorsReadAndWrite(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $this->assertSame($config, $config->trustProxy(true));
         $this->assertTrue($config->trustProxy());
@@ -122,7 +122,7 @@ class ConfigObjectTest extends TestCase
 
     public function testAccessorsChain(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $config->trustProxy(true)->trustedProxies(['10.0.0.0/8'])->ipVersion(4);
 
@@ -133,7 +133,7 @@ class ConfigObjectTest extends TestCase
 
     public function testSectionAccessorsChain(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $config->rateLimit->maxHits(30)->window(120);
 
@@ -144,11 +144,11 @@ class ConfigObjectTest extends TestCase
     /**
      * Reads and writes are told apart with func_num_args(), not a null default.
      * A null-sentinel would make these options impossible to clear — the exact
-     * bug that made the old Config::add() unable to write a null.
+     * bug that made the old ShieldConfig::add() unable to write a null.
      */
     public function testNullableOptionsCanBeClearedBackToNull(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $config->rateLimit->storageDir('/tmp/x');
         $this->assertSame('/tmp/x', $config->rateLimit->storageDir());
@@ -178,7 +178,7 @@ class ConfigObjectTest extends TestCase
      */
     public function testPartialSectionKeepsItsOtherDefaults(): void
     {
-        $config = Config::fromArray([
+        $config = ShieldConfig::fromArray([
             'request.filter' => ['content.length.max' => 2048],
         ]);
 
@@ -193,7 +193,7 @@ class ConfigObjectTest extends TestCase
 
     public function testPartialConfigKeepsOtherSections(): void
     {
-        $config = Config::fromArray(['ip' => ['blocklist' => ['1.2.3.4']]]);
+        $config = ShieldConfig::fromArray(['ip' => ['blocklist' => ['1.2.3.4']]]);
 
         $this->assertSame(['1.2.3.4'], $config->ip->blocklist());
         $this->assertSame(60, $config->rateLimit->maxHits());
@@ -206,7 +206,7 @@ class ConfigObjectTest extends TestCase
      */
     public function testListsAreReplacedNotConcatenated(): void
     {
-        $config = Config::fromArray(['request.filter' => ['blocked.methods' => ['PATCH']]]);
+        $config = ShieldConfig::fromArray(['request.filter' => ['blocked.methods' => ['PATCH']]]);
 
         $this->assertSame(['PATCH'], $config->requestFilter->blockedMethods());
     }
@@ -217,7 +217,7 @@ class ConfigObjectTest extends TestCase
      */
     public function testScalarStaysScalar(): void
     {
-        $config = Config::fromArray(['trust.proxy' => true]);
+        $config = ShieldConfig::fromArray(['trust.proxy' => true]);
 
         $this->assertTrue($config->trustProxy());
         $this->assertIsBool($config->trustProxy());
@@ -225,7 +225,7 @@ class ConfigObjectTest extends TestCase
 
     public function testUnknownKeysAreIgnored(): void
     {
-        $config = Config::fromArray(['no.such.key' => 'x', 'ip' => ['blocklist' => ['1.2.3.4']]]);
+        $config = ShieldConfig::fromArray(['no.such.key' => 'x', 'ip' => ['blocklist' => ['1.2.3.4']]]);
 
         $this->assertSame(['1.2.3.4'], $config->ip->blocklist());
         $this->assertArrayNotHasKey('no.such.key', $config->toArray());
@@ -233,7 +233,7 @@ class ConfigObjectTest extends TestCase
 
     public function testEmptyArrayYieldsPureDefaults(): void
     {
-        $this->assertEquals((Config::make())->toArray(), Config::fromArray([])->toArray());
+        $this->assertEquals((ShieldConfig::make())->toArray(), ShieldConfig::fromArray([])->toArray());
     }
 
     // -------------------------------------------------------------------------
@@ -242,7 +242,7 @@ class ConfigObjectTest extends TestCase
 
     public function testToArrayUsesDottedKeys(): void
     {
-        $array = (Config::make())->toArray();
+        $array = (ShieldConfig::make())->toArray();
 
         $this->assertArrayHasKey('trust.proxy', $array);
         $this->assertArrayHasKey('trusted.proxies', $array);
@@ -255,19 +255,19 @@ class ConfigObjectTest extends TestCase
 
     public function testRoundTripsThroughAnArray(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
         $config->trustProxy(true)->ipVersion(6);
         $config->ip->blocklist(['1.2.3.4']);
         $config->rateLimit->maxHits(5);
 
-        $restored = Config::fromArray($config->toArray());
+        $restored = ShieldConfig::fromArray($config->toArray());
 
         $this->assertEquals($config->toArray(), $restored->toArray());
     }
 
     public function testSectionLookupByDottedKey(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $this->assertSame($config->rateLimit, $config->section('rate.limit'));
         $this->assertSame($config->requestFilter, $config->section('request.filter'));
@@ -280,12 +280,12 @@ class ConfigObjectTest extends TestCase
 
     public function testCountryIsNotConfiguredByDefault(): void
     {
-        $this->assertFalse((Config::make())->country->isConfigured());
+        $this->assertFalse((ShieldConfig::make())->country->isConfigured());
     }
 
     public function testCountryNeedsBothADatabaseAndAList(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
 
         $config->country->db('/tmp/GeoLite2-Country.mmdb');
         $this->assertFalse($config->country->isConfigured(), 'A database alone is not enough.');
@@ -296,7 +296,7 @@ class ConfigObjectTest extends TestCase
 
     public function testCountryListWithoutADatabaseIsNotConfigured(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
         $config->country->blocklist(['CN']);
 
         $this->assertFalse($config->country->isConfigured());

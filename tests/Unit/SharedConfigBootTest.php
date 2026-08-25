@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Exceptions\FirewallException;
 use Laika\Shield\Pipeline\ShieldPipeline;
 use Laika\Shield\Rules\IpRule;
@@ -17,7 +17,7 @@ use ReflectionProperty;
 use ReflectionClass;
 
 /**
- * Shield::boot() reads the shared Config instance.
+ * Shield::boot() reads the shared ShieldConfig instance.
  *
  * @covers \Laika\Shield\Shield
  * @covers \Laika\Shield\Pipeline\ShieldPipeline
@@ -28,7 +28,7 @@ class SharedConfigBootTest extends TestCase
 
     protected function setUp(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
 
         $this->storageDir = sys_get_temp_dir() . '/laika_shield_shared_' . uniqid();
 
@@ -44,7 +44,7 @@ class SharedConfigBootTest extends TestCase
 
     protected function tearDown(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
         foreach (glob($this->storageDir . '/*') ?: [] as $file) {
@@ -55,14 +55,14 @@ class SharedConfigBootTest extends TestCase
     }
 
     /**
-     * boot() used to delegate to fromConfig([]), which builds a FRESH Config from
+     * boot() used to delegate to fromConfig([]), which builds a FRESH ShieldConfig from
      * pure defaults — so the documented "configure then boot" flow silently did
      * nothing at all.
      */
     public function testBootAppliesValuesSetThroughTheStaticFacade(): void
     {
-        Config::add('ip', ['blocklist' => ['1.2.3.4']]);
-        Config::add('rate.limit', 'storage.dir', $this->storageDir);
+        ShieldConfig::add('ip', ['blocklist' => ['1.2.3.4']]);
+        ShieldConfig::add('rate.limit', 'storage.dir', $this->storageDir);
 
         $this->expectException(FirewallException::class);
 
@@ -71,8 +71,8 @@ class SharedConfigBootTest extends TestCase
 
     public function testBootAppliesValuesSetThroughTheObjectApi(): void
     {
-        Config::instance()->ip->blocklist(['1.2.3.4']);
-        Config::instance()->rateLimit->storageDir($this->storageDir);
+        ShieldConfig::instance()->ip->blocklist(['1.2.3.4']);
+        ShieldConfig::instance()->rateLimit->storageDir($this->storageDir);
 
         $this->expectException(FirewallException::class);
 
@@ -81,8 +81,8 @@ class SharedConfigBootTest extends TestCase
 
     public function testBootPassesWhenTheSharedConfigDoesNotBlock(): void
     {
-        Config::add('ip', ['blocklist' => ['9.9.9.9']]);
-        Config::add('rate.limit', 'storage.dir', $this->storageDir);
+        ShieldConfig::add('ip', ['blocklist' => ['9.9.9.9']]);
+        ShieldConfig::add('rate.limit', 'storage.dir', $this->storageDir);
 
         Shield::boot();
 
@@ -99,10 +99,10 @@ class SharedConfigBootTest extends TestCase
 
     public function testSharedConfigReachesTheBuiltRules(): void
     {
-        Config::add('rate.limit', 'max.hits', 5);
-        Config::add('ip', ['blocklist' => ['8.8.8.8']]);
+        ShieldConfig::add('rate.limit', 'max.hits', 5);
+        ShieldConfig::add('ip', ['blocklist' => ['8.8.8.8']]);
 
-        $rules = $this->rules(Shield::fromConfig(Config::instance()));
+        $rules = $this->rules(Shield::fromConfig(ShieldConfig::instance()));
 
         $this->assertSame(['8.8.8.8'], $this->prop($this->ruleOf($rules, IpRule::class), 'blocklist'));
         $this->assertSame(5, $this->prop($this->ruleOf($rules, RateLimitRule::class), 'maxHits'));
@@ -114,7 +114,7 @@ class SharedConfigBootTest extends TestCase
      */
     public function testFromConfigWithAnArrayIgnoresTheSharedInstance(): void
     {
-        Config::add('rate.limit', 'max.hits', 5);
+        ShieldConfig::add('rate.limit', 'max.hits', 5);
 
         $rules = $this->rules(Shield::fromConfig([]));
 
@@ -135,8 +135,8 @@ class SharedConfigBootTest extends TestCase
      */
     public function testPipelineWithNoArgumentUsesTheSharedConfig(): void
     {
-        Config::add('ip', ['blocklist' => ['1.2.3.4']]);
-        Config::add('rate.limit', 'storage.dir', $this->storageDir);
+        ShieldConfig::add('ip', ['blocklist' => ['1.2.3.4']]);
+        ShieldConfig::add('rate.limit', 'storage.dir', $this->storageDir);
 
         // The real respond() echoes and dies, which would take the test runner
         // with it — stub it the same way ShieldPipelineTest does.
@@ -150,7 +150,7 @@ class SharedConfigBootTest extends TestCase
             }
         };
 
-        $this->assertSame(Config::instance(), $this->prop($pipeline, 'config'));
+        $this->assertSame(ShieldConfig::instance(), $this->prop($pipeline, 'config'));
 
         $called = 0;
         $params = [];
@@ -170,24 +170,24 @@ class SharedConfigBootTest extends TestCase
 
     public function testPipelineArrayOptionsLayerOverTheSharedConfig(): void
     {
-        Config::add('rate.limit', 'max.hits', 5);
+        ShieldConfig::add('rate.limit', 'max.hits', 5);
 
         new ShieldPipeline(['ip' => ['blocklist' => ['1.2.3.4']]]);
 
         // Documented side effect: the array branch fills the shared instance.
-        $this->assertSame(['1.2.3.4'], Config::get('ip')['blocklist']);
-        $this->assertSame(5, Config::get('rate.limit')['max.hits'], 'Existing values must survive.');
+        $this->assertSame(['1.2.3.4'], ShieldConfig::get('ip')['blocklist']);
+        $this->assertSame(5, ShieldConfig::get('rate.limit')['max.hits'], 'Existing values must survive.');
     }
 
     public function testPipelineWithAnExplicitConfigDoesNotTouchTheSharedInstance(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
         $config->ip->blocklist(['5.5.5.5']);
 
         $pipeline = new ShieldPipeline($config);
 
         $this->assertSame($config, $this->prop($pipeline, 'config'));
-        $this->assertSame([], Config::get('ip')['blocklist']);
+        $this->assertSame([], ShieldConfig::get('ip')['blocklist']);
     }
 
     // -------------------------------------------------------------------------

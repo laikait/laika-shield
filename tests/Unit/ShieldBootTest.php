@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Rules\CountryRule;
 use Laika\Shield\Rules\IpRule;
 use Laika\Shield\Rules\IpVersionRule;
@@ -23,7 +23,7 @@ class ShieldBootTest extends TestCase
 {
     protected function setUp(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
 
         $_SERVER['REMOTE_ADDR']    = '203.0.113.9';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -59,7 +59,7 @@ class ShieldBootTest extends TestCase
     }
 
     /**
-     * Every configured section is always registered now: a Config carries complete
+     * Every configured section is always registered now: a ShieldConfig carries complete
      * defaults, so overrides adjust the firewall rather than switching it on.
      */
     public function testDefaultsRegisterTheFullRuleSet(): void
@@ -98,7 +98,7 @@ class ShieldBootTest extends TestCase
 
     public function testAcceptsAConfigObject(): void
     {
-        $config = Config::make();
+        $config = ShieldConfig::make();
         $config->xss->skipKeys(['content'])->scanHeaders(true);
 
         $rules = $this->prop(\Laika\Shield\Shield::fromConfig($config), 'rules');
@@ -165,7 +165,7 @@ class ShieldBootTest extends TestCase
 
     protected function tearDown(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
     }
 
     private function prop(object $object, string $name): mixed

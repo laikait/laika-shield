@@ -56,10 +56,12 @@
     },
     "extra": {
         "laika": {
-            "relays": [
-                "Laika\\Shield\\Relay\\ShieldRelay"
-            ],
             "resources": {
+                "relays": {
+                    "path": "src/Relay",
+                    "namespace": "Laika\\Shield\\Relay",
+                    "contract": "Laika\\Relay\\RelayProvider"
+                },
                 "pipelines": {
                     "path": "src/Pipeline",
                     "namespace": "Laika\\Shield\\Pipeline",

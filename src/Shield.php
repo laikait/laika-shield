@@ -30,14 +30,14 @@ use Laika\Shield\Rules\IpRule;
  * Usage — quick static API. Shield::boot() takes no arguments; it reads the
  * shared configuration, so configure that first:
  *
- *   Config::add('ip', ['blocklist' => ['1.2.3.4']]);
- *   Config::add('rate.limit', 'max.hits', 100);
+ *   ShieldConfig::add('ip', ['blocklist' => ['1.2.3.4']]);
+ *   ShieldConfig::add('rate.limit', 'max.hits', 100);
  *
  *   Shield::boot();
  *
  * Usage — an explicit configuration object:
  *
- *   $config = Config::make();
+ *   $config = ShieldConfig::make();
  *   $config->ip->blocklist(['1.2.3.4']);
  *
  *   Shield::fromConfig($config)->run();
@@ -75,8 +75,8 @@ final class Shield
      *
      * Configure it first, with either the object API or the static facade:
      *
-     *   Config::instance()->ip->blocklist(['1.2.3.4']);
-     *   Config::add('rate.limit', 'max.hits', 30);
+     *   ShieldConfig::instance()->ip->blocklist(['1.2.3.4']);
+     *   ShieldConfig::add('rate.limit', 'max.hits', 30);
      *   Shield::boot();
      *
      * To run an explicit configuration instead, use fromConfig():
@@ -88,11 +88,11 @@ final class Shield
      */
     public static function boot(): void
     {
-        static::fromConfig(Config::instance())->run();
+        static::fromConfig(ShieldConfig::instance())->run();
     }
 
     /**
-     * Build a configured Shield from a Config object WITHOUT running it.
+     * Build a configured Shield from a ShieldConfig object WITHOUT running it.
      *
      * Split out of boot() so the config-to-rule wiring can be asserted without
      * evaluating rules against the live request.
@@ -102,15 +102,15 @@ final class Shield
      *
      * This deliberately does NOT read the shared instance — it stays free of
      * global state so the wiring can be tested in isolation. Pass
-     * Config::instance() explicitly if that is what you want.
+     * ShieldConfig::instance() explicitly if that is what you want.
      *
-     * @param Config|array<string,mixed> $config
+     * @param ShieldConfig|array<string,mixed> $config
      * @return static
      */
-    public static function fromConfig(Config|array $config = []): static
+    public static function fromConfig(ShieldConfig|array $config = []): static
     {
         $shield = new static();
-        $config = $config instanceof Config ? $config : Config::fromArray($config);
+        $config = $config instanceof ShieldConfig ? $config : ShieldConfig::fromArray($config);
 
         $shield->trustProxy($config->trustProxy(), $config->trustedProxies());
 

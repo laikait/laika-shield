@@ -18,29 +18,29 @@ use Laika\Shield\Config\SqlInjectionConfig;
 use Laika\Shield\Config\XssConfig;
 
 /**
- * Class Config
+ * Class ShieldConfig
  *
  * The Shield configuration as an object graph. Every option carries its default
- * on the property that holds it, so a Config is complete the moment it exists —
+ * on the property that holds it, so a ShieldConfig is complete the moment it exists —
  * there is no config file to publish.
  *
- * Config is a SINGLETON. The constructor is not public, because a detached
+ * ShieldConfig is a SINGLETON. The constructor is not public, because a detached
  * config that Shield::boot() cannot see is a trap, not a feature.
  *
  * Normal use — configure the shared instance, then boot:
  *
- *   Config::instance()
+ *   ShieldConfig::instance()
  *       ->trustProxy(true)
  *       ->trustedProxies(['10.0.0.0/8']);
  *
- *   Config::instance()->ip->blocklist(['1.2.3.4', '10.0.0.0/8']);
- *   Config::instance()->rateLimit->maxHits(30)->window(120);
+ *   ShieldConfig::instance()->ip->blocklist(['1.2.3.4', '10.0.0.0/8']);
+ *   ShieldConfig::instance()->rateLimit->maxHits(30)->window(120);
  *
  *   Shield::boot();
  *
  * Detached use — build one explicitly and run it yourself:
  *
- *   $config = Config::make();
+ *   $config = ShieldConfig::make();
  *   $config->xss->skipKeys(['content']);
  *
  *   Shield::fromConfig($config)->run();
@@ -54,9 +54,9 @@ use Laika\Shield\Config\XssConfig;
  *
  * @package Laika\Shield
  */
-class Config
+class ShieldConfig
 {
-    private static ?Config $instance = null;
+    private static ?ShieldConfig $instance = null;
 
     public readonly IpConfig $ip;
 
@@ -90,8 +90,8 @@ class Config
     private ?int $ipVersion = null;
 
     /**
-     * Not public: Config is a singleton. Use Config::instance() for the shared
-     * configuration that Shield::boot() reads, or Config::make() / fromArray()
+     * Not public: ShieldConfig is a singleton. Use ShieldConfig::instance() for the shared
+     * configuration that Shield::boot() reads, or ShieldConfig::make() / fromArray()
      * for a detached instance to hand to Shield::fromConfig().
      *
      * A public constructor let callers build a config that boot() could never
@@ -161,7 +161,7 @@ class Config
      * A new, DETACHED configuration carrying the defaults.
      *
      * This is not the shared instance — Shield::boot() will not see it. Pass it
-     * to Shield::fromConfig() explicitly, or use Config::instance() instead.
+     * to Shield::fromConfig() explicitly, or use ShieldConfig::instance() instead.
      *
      * @return static
      */
@@ -171,7 +171,7 @@ class Config
     }
 
     /**
-     * Build a DETACHED Config from a dotted-key array, starting from the defaults.
+     * Build a DETACHED ShieldConfig from a dotted-key array, starting from the defaults.
      *
      * Only the keys present are applied, so a partial array merges rather than
      * replaces. Unknown keys are ignored.
@@ -191,7 +191,7 @@ class Config
     /*
      * These always resolve the SHARED instance — the one Shield::boot() reads.
      *
-     * If you are holding a detached config from Config::make(), reach its
+     * If you are holding a detached config from ShieldConfig::make(), reach its
      * sections through the object instead ($config->rateLimit); these accessors
      * will not see it.
      */
@@ -305,10 +305,10 @@ class Config
     /**
      * Add or merge a value into the shared configuration.
      *
-     * Two-argument call:   Config::add('ip', ['blocklist' => [...]])
-     * Three-argument call: Config::add('rate.limit', 'max.hits', 30)
+     * Two-argument call:   ShieldConfig::add('ip', ['blocklist' => [...]])
+     * Three-argument call: ShieldConfig::add('rate.limit', 'max.hits', 30)
      *
-     * @param string $key Config key
+     * @param string $key ShieldConfig key
      * @param mixed $subKeyOrValue Sub key, or the value for a two-argument call
      * @param mixed $value Value for a three-argument call. Default is null.
      * @return void
@@ -368,11 +368,11 @@ class Config
     }
 
     /**
-     * Get Config Values.
+     * Get ShieldConfig Values.
      *
      * Returns arrays rather than objects so existing callers keep working.
      *
-     * @param ?string $key Config Key. Default is null for the whole config.
+     * @param ?string $key ShieldConfig Key. Default is null for the whole config.
      * @return mixed
      */
     public static function get(?string $key = null): mixed
@@ -404,7 +404,7 @@ class Config
     }
 
     /**
-     * Reset Config back to defaults.
+     * Reset ShieldConfig back to defaults.
      * @return void
      */
     public static function reset(): void
