@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \Laika\Shield\Config
+ * @covers \Laika\Shield\ShieldConfig
  */
 class ConfigTest extends TestCase
 {
     protected function setUp(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
     }
 
     protected function tearDown(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
     }
 
     /**
@@ -29,10 +29,10 @@ class ConfigTest extends TestCase
      */
     public function testTwoArgumentAddMergesInsteadOfOverwriting(): void
     {
-        Config::add('ip', ['blocklist' => ['1.1.1.1']]);
-        Config::add('ip', ['allowlist' => ['2.2.2.2']]);
+        ShieldConfig::add('ip', ['blocklist' => ['1.1.1.1']]);
+        ShieldConfig::add('ip', ['allowlist' => ['2.2.2.2']]);
 
-        $ip = Config::get('ip');
+        $ip = ShieldConfig::get('ip');
 
         $this->assertSame(['1.1.1.1'], $ip['blocklist']);
         $this->assertSame(['2.2.2.2'], $ip['allowlist']);
@@ -40,26 +40,26 @@ class ConfigTest extends TestCase
 
     public function testThreeArgumentAddMergesArrayValues(): void
     {
-        Config::add('sql.injection', 'skip.keys', ['password']);
-        Config::add('sql.injection', 'skip.keys', ['token']);
+        ShieldConfig::add('sql.injection', 'skip.keys', ['password']);
+        ShieldConfig::add('sql.injection', 'skip.keys', ['token']);
 
-        $this->assertSame(['password', 'token'], Config::get('sql.injection')['skip.keys']);
+        $this->assertSame(['password', 'token'], ShieldConfig::get('sql.injection')['skip.keys']);
     }
 
     public function testThreeArgumentAddReplacesScalarValues(): void
     {
-        Config::add('rate.limit', 'max.hits', 30);
-        $this->assertSame(30, Config::get('rate.limit')['max.hits']);
+        ShieldConfig::add('rate.limit', 'max.hits', 30);
+        $this->assertSame(30, ShieldConfig::get('rate.limit')['max.hits']);
 
-        Config::add('rate.limit', 'max.hits', 10);
-        $this->assertSame(10, Config::get('rate.limit')['max.hits']);
+        ShieldConfig::add('rate.limit', 'max.hits', 10);
+        $this->assertSame(10, ShieldConfig::get('rate.limit')['max.hits']);
     }
 
     public function testThreeArgumentAddLeavesSiblingKeysIntact(): void
     {
-        Config::add('rate.limit', 'max.hits', 30);
+        ShieldConfig::add('rate.limit', 'max.hits', 30);
 
-        $rateLimit = Config::get('rate.limit');
+        $rateLimit = ShieldConfig::get('rate.limit');
 
         $this->assertSame(30, $rateLimit['max.hits']);
         $this->assertArrayHasKey('window', $rateLimit, 'Sibling keys must survive a sub-key update.');
@@ -68,15 +68,15 @@ class ConfigTest extends TestCase
 
     public function testTopLevelScalarIsSet(): void
     {
-        Config::add('trust.proxy', true);
-        $this->assertTrue(Config::get('trust.proxy'));
+        ShieldConfig::add('trust.proxy', true);
+        $this->assertTrue(ShieldConfig::get('trust.proxy'));
     }
 
     public function testHasAndKeys(): void
     {
-        $this->assertTrue(Config::has('rate.limit'));
-        $this->assertFalse(Config::has('no.such.key'));
-        $this->assertContains('xss', Config::keys());
+        $this->assertTrue(ShieldConfig::has('rate.limit'));
+        $this->assertFalse(ShieldConfig::has('no.such.key'));
+        $this->assertContains('xss', ShieldConfig::keys());
     }
 
     /**
@@ -85,12 +85,12 @@ class ConfigTest extends TestCase
      */
     public function testStrictSqlMatchingIsOffByDefault(): void
     {
-        $this->assertFalse(Config::get('sql.injection')['strict']);
+        $this->assertFalse(ShieldConfig::get('sql.injection')['strict']);
     }
 
     public function testDefaultsIncludeTrustedProxiesKey(): void
     {
-        $this->assertTrue(Config::has('trusted.proxies'));
-        $this->assertSame([], Config::get('trusted.proxies'));
+        $this->assertTrue(ShieldConfig::has('trusted.proxies'));
+        $this->assertSame([], ShieldConfig::get('trusted.proxies'));
     }
 }

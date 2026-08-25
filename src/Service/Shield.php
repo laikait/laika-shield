@@ -26,7 +26,7 @@ use Laika\Relay\Relay;
  * @method static void run()
  * @method static never block(RuleInterface $rule)
  * @method static void boot()
- * @method static static fromConfig(\Laika\Shield\Config|array $config = [])
+ * @method static static fromConfig(\Laika\Shield\ShieldConfig|array $config = [])
  */
 class Shield extends Relay
 {

@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Laika\Shield\Relay;
 
 use Laika\Shield\Shield;
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Relay\RelayProvider;
 use Laika\Relay\Relay;
 
@@ -25,7 +25,7 @@ class ShieldRelay extends RelayProvider
             return;
         }
 
-        $this->registry->singleton('shield.config', Config::class);
+        $this->registry->singleton('shield.config', ShieldConfig::class);
         $this->registry->singleton('shield', Shield::class);
     }
 }

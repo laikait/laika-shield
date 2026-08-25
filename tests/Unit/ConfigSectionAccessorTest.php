@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Config\CountryConfig;
 use Laika\Shield\Config\IpConfig;
 use Laika\Shield\Config\RateLimitConfig;
@@ -17,15 +17,15 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
 /**
- * Static section accessors: Config::rateLimit()->maxHits(30)
+ * Static section accessors: ShieldConfig::rateLimit()->maxHits(30)
  *
- * @covers \Laika\Shield\Config
+ * @covers \Laika\Shield\ShieldConfig
  */
 class ConfigSectionAccessorTest extends TestCase
 {
     protected function setUp(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
 
         $_SERVER['REMOTE_ADDR']    = '203.0.113.5';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -34,7 +34,7 @@ class ConfigSectionAccessorTest extends TestCase
 
     protected function tearDown(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
     }
 
@@ -58,7 +58,7 @@ class ConfigSectionAccessorTest extends TestCase
      */
     public function testAccessorReturnsTheCorrectType(string $accessor, string $class): void
     {
-        $this->assertInstanceOf($class, Config::$accessor());
+        $this->assertInstanceOf($class, ShieldConfig::$accessor());
     }
 
     /**
@@ -69,7 +69,7 @@ class ConfigSectionAccessorTest extends TestCase
      */
     public function testAccessorReturnsTheSharedInstanceSection(string $accessor): void
     {
-        $this->assertSame(Config::instance()->{$accessor}, Config::$accessor());
+        $this->assertSame(ShieldConfig::instance()->{$accessor}, ShieldConfig::$accessor());
     }
 
     /**
@@ -77,12 +77,12 @@ class ConfigSectionAccessorTest extends TestCase
      */
     public function testAccessorFollowsReset(string $accessor): void
     {
-        $before = Config::$accessor();
+        $before = ShieldConfig::$accessor();
 
-        Config::reset();
+        ShieldConfig::reset();
 
-        $this->assertNotSame($before, Config::$accessor(), 'A stale section must not survive reset().');
-        $this->assertSame(Config::instance()->{$accessor}, Config::$accessor());
+        $this->assertNotSame($before, ShieldConfig::$accessor(), 'A stale section must not survive reset().');
+        $this->assertSame(ShieldConfig::instance()->{$accessor}, ShieldConfig::$accessor());
     }
 
     // -------------------------------------------------------------------------
@@ -91,34 +91,34 @@ class ConfigSectionAccessorTest extends TestCase
 
     public function testOptionsChainThroughTheAccessor(): void
     {
-        Config::rateLimit()->maxHits(30)->window(120);
+        ShieldConfig::rateLimit()->maxHits(30)->window(120);
 
-        $this->assertSame(30, Config::rateLimit()->maxHits());
-        $this->assertSame(120, Config::rateLimit()->window());
+        $this->assertSame(30, ShieldConfig::rateLimit()->maxHits());
+        $this->assertSame(120, ShieldConfig::rateLimit()->window());
     }
 
     public function testRequestFilterRequiredHeaders(): void
     {
-        Config::requestFilter()->requiredHeaders(['x-api-key']);
+        ShieldConfig::requestFilter()->requiredHeaders(['x-api-key']);
 
-        $this->assertSame(['x-api-key'], Config::requestFilter()->requiredHeaders());
+        $this->assertSame(['x-api-key'], ShieldConfig::requestFilter()->requiredHeaders());
 
         // Sibling defaults must survive.
-        $this->assertSame(['TRACE', 'CONNECT'], Config::requestFilter()->blockedMethods());
+        $this->assertSame(['TRACE', 'CONNECT'], ShieldConfig::requestFilter()->blockedMethods());
     }
 
     public function testWritesAreVisibleThroughTheStaticFacade(): void
     {
-        Config::ip()->blocklist(['1.2.3.4']);
+        ShieldConfig::ip()->blocklist(['1.2.3.4']);
 
-        $this->assertSame(['1.2.3.4'], Config::get('ip')['blocklist']);
+        $this->assertSame(['1.2.3.4'], ShieldConfig::get('ip')['blocklist']);
     }
 
     public function testFacadeWritesAreVisibleThroughTheAccessor(): void
     {
-        Config::add('rate.limit', 'max.hits', 7);
+        ShieldConfig::add('rate.limit', 'max.hits', 7);
 
-        $this->assertSame(7, Config::rateLimit()->maxHits());
+        $this->assertSame(7, ShieldConfig::rateLimit()->maxHits());
     }
 
     /**
@@ -126,12 +126,12 @@ class ConfigSectionAccessorTest extends TestCase
      */
     public function testAccessorWritesReachTheBuiltRules(): void
     {
-        Config::rateLimit()->maxHits(5);
+        ShieldConfig::rateLimit()->maxHits(5);
 
         $rules = new ReflectionProperty(Shield::class, 'rules');
         $rules->setAccessible(true);
 
-        $built = $rules->getValue(Shield::fromConfig(Config::instance()));
+        $built = $rules->getValue(Shield::fromConfig(ShieldConfig::instance()));
         $found = array_values(array_filter($built, fn ($r) => $r instanceof RateLimitRule));
 
         $this->assertCount(1, $found);
@@ -148,28 +148,28 @@ class ConfigSectionAccessorTest extends TestCase
 
     /**
      * Static accessors ALWAYS resolve the shared instance. Holding a detached
-     * config and reaching for Config::rateLimit() configures the wrong object —
-     * the same silent no-op that made a public `new Config()` a trap.
+     * config and reaching for ShieldConfig::rateLimit() configures the wrong object —
+     * the same silent no-op that made a public `new ShieldConfig()` a trap.
      */
     public function testStaticAccessorsDoNotTouchADetachedConfig(): void
     {
-        $detached = Config::make();
+        $detached = ShieldConfig::make();
 
-        Config::rateLimit()->maxHits(1);
+        ShieldConfig::rateLimit()->maxHits(1);
 
         $this->assertSame(
             60,
             $detached->rateLimit->maxHits(),
             'A detached config must be unaffected by the static accessors.'
         );
-        $this->assertSame(1, Config::rateLimit()->maxHits());
+        $this->assertSame(1, ShieldConfig::rateLimit()->maxHits());
     }
 
     public function testDetachedWritesDoNotLeakIntoTheSharedInstance(): void
     {
-        $detached = Config::make();
+        $detached = ShieldConfig::make();
         $detached->rateLimit->maxHits(1);
 
-        $this->assertSame(60, Config::rateLimit()->maxHits());
+        $this->assertSame(60, ShieldConfig::rateLimit()->maxHits());
     }
 }

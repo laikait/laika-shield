@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Laika\Shield\Tests\Unit;
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Exceptions\FirewallException;
 use Laika\Shield\Shield;
 use Laika\Shield\Support\RequestHelper;
@@ -23,7 +23,7 @@ class InputMemoTest extends TestCase
 {
     protected function setUp(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
         RequestHelper::flush();
 
         $_SERVER['REMOTE_ADDR']    = '203.0.113.44';
@@ -35,7 +35,7 @@ class InputMemoTest extends TestCase
 
     protected function tearDown(): void
     {
-        Config::reset();
+        ShieldConfig::reset();
         RequestHelper::flush();
 
         $_GET  = [];
@@ -72,7 +72,7 @@ class InputMemoTest extends TestCase
     public function testCleanRequestAfterAMaliciousOneIsNotBlocked(): void
     {
         $storage = sys_get_temp_dir() . '/laika_memo_' . uniqid();
-        Config::rateLimit()->storageDir($storage)->maxHits(1000);
+        ShieldConfig::rateLimit()->storageDir($storage)->maxHits(1000);
 
         // Request 1 — carries an XSS payload and is blocked.
         $_GET = ['bio' => '<script>alert(1)</script>'];
@@ -112,7 +112,7 @@ class InputMemoTest extends TestCase
     public function testMaliciousRequestAfterACleanOneIsStillBlocked(): void
     {
         $storage = sys_get_temp_dir() . '/laika_memo_' . uniqid();
-        Config::rateLimit()->storageDir($storage)->maxHits(1000);
+        ShieldConfig::rateLimit()->storageDir($storage)->maxHits(1000);
 
         $_GET = ['bio' => 'perfectly ordinary text'];
         Shield::boot();

@@ -55,7 +55,7 @@ abstract class SectionConfig
     }
 
     /**
-     * The section as a dotted-key array, for the static Config facade.
+     * The section as a dotted-key array, for the static ShieldConfig facade.
      *
      * @return array<string,mixed>
      */

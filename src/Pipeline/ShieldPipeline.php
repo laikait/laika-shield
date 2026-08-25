@@ -12,7 +12,7 @@ namespace Laika\Shield\Pipeline;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use Laika\Shield\Config;
+use Laika\Shield\ShieldConfig;
 use Laika\Shield\Shield;
 use Laika\Route\Contracts\PipelineInterface;
 use Laika\Shield\Exceptions\FirewallException;
@@ -41,26 +41,26 @@ use Laika\Shield\Exceptions\RateLimitExceededException;
  */
 class ShieldPipeline implements PipelineInterface
 {
-    private readonly Config $config;
+    private readonly ShieldConfig $config;
 
     /**
      * With no argument — which is how the framework auto-registers this pipeline —
      * the shared configuration is used, so whatever the application set up with
-     * Config::add() or Config::instance() applies.
+     * ShieldConfig::add() or ShieldConfig::instance() applies.
      *
      * Note the array branch: options are applied on top of the shared instance
      * with fill(), which MUTATES global configuration. That is intentional for the
      * single-source model, but it is a side effect worth knowing about if you
      * construct pipelines more than once in a process.
      *
-     * @param Config|array<string,mixed> $config Shield configuration.
+     * @param ShieldConfig|array<string,mixed> $config Shield configuration.
      */
-    public function __construct(Config|array $config = [])
+    public function __construct(ShieldConfig|array $config = [])
     {
         $this->config = match (true) {
-            $config instanceof Config => $config,
-            $config === []            => Config::instance(),
-            default                   => Config::instance()->fill($config),
+            $config instanceof ShieldConfig => $config,
+            $config === []            => ShieldConfig::instance(),
+            default                   => ShieldConfig::instance()->fill($config),
         };
     }
 
