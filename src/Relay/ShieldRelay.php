@@ -25,7 +25,10 @@ class ShieldRelay extends RelayProvider
             return;
         }
 
-        $this->registry->singleton('shield.config', ShieldConfig::class);
+        // A factory, not the class name: the constructor is protected, so the
+        // registry could never build it, and the relay must hand back the same
+        // shared instance Shield::boot() reads.
+        $this->registry->singleton('shield.config', fn () => ShieldConfig::instance());
         $this->registry->singleton('shield', Shield::class);
     }
 }
